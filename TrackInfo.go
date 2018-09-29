@@ -2,7 +2,8 @@ package main
 
 import "time"
 
-type trackInfo struct {
+// TrackInfo contains some information about a track
+type TrackInfo struct {
 	HDate       time.Time `json:"H_date"`
 	Pilot       string    `json:"pilot"`
 	Glider      string    `json:"glider"`
