@@ -69,7 +69,8 @@ func handlerIGC(w http.ResponseWriter, r *http.Request) {
 	parts = parts[2:]
 
 	if len(parts) == 1 || (len(parts) == 2 && parts[1] == "") { // PATH: "/api/" or "/api"
-		w.Header().Add("content-type", "application/json") // Set the response type
+		//w.Header().Add("content-type", "application/json") // Set the response type
+		http.Header.Add(w.Header(), "content-type", "application/json")
 
 		// Provide basic information about the api
 
