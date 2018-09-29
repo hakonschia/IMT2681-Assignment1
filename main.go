@@ -86,7 +86,7 @@ func handlerIGC(w http.ResponseWriter, r *http.Request) {
 		info.Version = "V1"
 
 		json.NewEncoder(w).Encode(&info)
-	} else if len(parts) == 3 { //  && numericPath.MatchString(parts[2])
+	} else if len(parts) == 2 && numericPath.MatchString(parts[2]) {
 		fmt.Fprintln(w, "ID = ", parts[2])
 	}
 	/*else if ( GET /api/igc ) {
