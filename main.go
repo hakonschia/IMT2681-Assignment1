@@ -18,10 +18,7 @@ var (
 	startTime      time.Time // The start time of the application/API
 	numericPath, _ = regexp.Compile("[0-9]")
 	tracks         []igc.Track // The tracks retrieved by the user
-	//trackIDs       []int       // The IDs of the tracks	// TODO: Make ID's strings? Look at Track.Header.UniqueID (it is a string)
-	//lastID         int         // Last used ID
-
-	trackIDs map[string]igc.Track
+	trackIDs       map[string]igc.Track
 )
 
 type jsonURL struct {
@@ -100,7 +97,6 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 	case 1: // PATH: /igc/
 		switch r.Method {
 		case "GET":
-			//fmt.Println("GETTING", trackIDs)
 			var IDs []string // TODO: Make this return empty array and not "null"
 
 			fmt.Println(IDs)
@@ -123,13 +119,11 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 			tracks = append(tracks, newTrack)
 
 			trackIDs[newTrack.Header.UniqueID] = newTrack // Map the uniqueID to the track
-			//trackIDs = append(trackIDs, lastID)
-			//lastID++
 		default: // Only POST and GET methods are implemented, any other type aborts
 			return
 		}
 	case 2: // PATH: /igc/../
-		if numericPath.MatchString(parts[1]) { // PATH: /igc/<ID>
+		if numericPath.MatchString(parts[1]) { // PATH: /igc/<ID>	//TODO: ID is no longer numeric, look into regexp solution
 			ID, _ := strconv.Atoi(parts[1]) // No need for error checking, as the if statement checks for numeric values (TODO: possibly change this? Remove if and check for error)
 
 			var tInfo TrackInfo
@@ -140,17 +134,13 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 			tInfo.Glider = tracks[ID].Header.GliderType
 			tInfo.TrackLength = tracks[ID].Task.Distance()
 
-			//fmt.Println("ID:", ID, tracks[ID])
 			json.NewEncoder(w).Encode(&tInfo)
-
 		} else {
 			http.Error(w, "Invalid ID", http.StatusNotFound) // TODO: Change error code to something more fitting (perhaps)
 			return
 		}
-	case 3:
+	case 3: // PATH: /igc/<id>/<field>
 		w.Header().Add("content-type", "text/plain")
-		ID, _ := strconv.Atoi(parts[1])
-		ID = ID // DONT QUESTION IT
 	default:
 		http.Error(w, "WTF R U DING KIDDO=()", http.StatusNotFound)
 		return
