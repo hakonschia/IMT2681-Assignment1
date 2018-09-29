@@ -79,7 +79,7 @@ func handlerIGC(w http.ResponseWriter, r *http.Request) {
 
 		//ts := tds.UTC().Format("2006-01-02T15:04:05-0700")
 
-		info.Uptime = time.Now().Sub(startTime) // Just get the seconds for now
+		info.Uptime = time.Since(startTime) // Just get the seconds for now
 		info.Info = "Service for IGC tracks"
 		info.Version = "V1"
 
