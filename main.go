@@ -25,13 +25,14 @@ func main() {
 	if !ok {
 		port = "8080"
 	}
-	port = ":" + port
+
+	fmt.Println("Port is:", port)
 
 	http.HandleFunc("/", handlerRoot)
 	http.HandleFunc("/igcinfo/", handlerIGC)
 	//http.HandleFunc("/igcinfo/API", handlerAPI)
 
-	err := http.ListenAndServe(port, nil)
+	err := http.ListenAndServe(":"+port, nil)
 
 	log.Fatalf("Server error: %s", err)
 }
@@ -68,7 +69,7 @@ func handlerIGC(w http.ResponseWriter, r *http.Request) {
 	// to work from the standpoint of "/api/" being the root
 	parts = parts[2:]
 
-	fmt.Fprintln(w, parts)
+	//fmt.Fprintln(w, parts)
 
 	if len(parts) == 1 || (len(parts) == 2 && parts[1] == "") { // PATH: "/api" or "/api/"
 		w.Header().Add("content-type", "application/json") // Set the response type
@@ -81,23 +82,20 @@ func handlerIGC(w http.ResponseWriter, r *http.Request) {
 
 		//ts := tds.UTC().Format("2006-01-02T15:04:05-0700")
 
-		info.Uptime = time.Since(startTime) // Just get the seconds for now
+		info.Uptime = time.Since(startTime).Seconds() // Just get the seconds for now
 		info.Info = "Service for IGC tracks"
 		info.Version = "V1"
 
 		json.NewEncoder(w).Encode(&info)
-	} else if len(parts) == 2 && numericPath.MatchString(parts[1]) {
-		fmt.Fprintln(w, "ID = ", parts[2])
-	}
-	/*else if ( GET /api/igc ) {
+	} else { // /api/<rubbish>
+		http.Error(w, "Nothind found at /api/", http.StatusNotFound)
+		return
+	} /*else if ( GET /api/igc ) {
 		w.Header().Add("content-type", "application/json")
 	} else if ( GET /api/igc/<id> ) {
 		w.Header().Add("content-type", "application/json")
 	} else if ( GET /api/igc/<id>/<field>) {
 		w.Header().Add("content-type", "text/plain")
-	} else { // /api/<rubbish>
-		http.Error(w, "Nothind found at /api/", http.StatusNotFound)
-		return
 	} */
 
 	// Status 200: OK
