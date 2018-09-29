@@ -68,6 +68,8 @@ func handlerIGC(w http.ResponseWriter, r *http.Request) {
 	// to work from the standpoint of "/api/" being the root
 	parts = parts[2:]
 
+	fmt.Fprintln(w, parts)
+
 	if len(parts) == 1 || (len(parts) == 2 && parts[1] == "") { // PATH: "/api" or "/api/"
 		w.Header().Add("content-type", "application/json") // Set the response type
 
