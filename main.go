@@ -9,12 +9,21 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	igc "github.com/marni/goigc"
 )
 
 var (
 	startTime      time.Time // The start time of the application
 	numericPath, _ = regexp.Compile("[0-9]")
+	tracks         []igc.Track // The tracks retrieved by the user
+	trackIDs       []int       // The IDs of the tracks
+	lastID         int         // Last used ID
 )
+
+type jsonURL struct {
+	URL string `json:"url"`
+}
 
 func init() {
 	startTime = time.Now()
@@ -28,9 +37,11 @@ func main() {
 
 	fmt.Println("Port is:", port)
 
+	//http.HandleFunc("/igcinfo/api/igc")
+	http.HandleFunc("/igcinfo/api/igc", handlerAPIIGC)
+	http.HandleFunc("/igcinfo/api", handlerAPI)
+	http.HandleFunc("/igcinfo/", handlerIGCINFO)
 	http.HandleFunc("/", handlerRoot)
-	http.HandleFunc("/igcinfo/", handlerIGC)
-	//http.HandleFunc("/igcinfo/API", handlerAPI)
 
 	err := http.ListenAndServe(":"+port, nil)
 
@@ -39,72 +50,104 @@ func main() {
 
 // Handles root errors (no path)
 func handlerRoot(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("NICE BRUR")
 	http.Error(w, "Not allowed at root.", http.StatusNotFound)
 }
 
-func router(w http.ResponseWriter, r *http.Request) {
-	//parts := strings.Split(r.URL.Path, "/") // Split the url into all its parts
-	//path := r.URL.Path
-	/*switch {
-		case: numericPath.MatchString(path)
-	}*/
-}
-
 // Handles only when IGC is the path (basically only error handling)
-func handlerIGC(w http.ResponseWriter, r *http.Request) {
-	parts := strings.Split(r.URL.Path, "/") // Split the url into all its parts
+func handlerIGCINFO(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, "Not allowed at /igcinfo.", http.StatusNotFound)
+	/*
+		if len(parts) == 2 { // PATH: "/igcinfo/" (the browser will add a backslash at the end)
+			http.Error(w, "Not allowed at /igcinfo.", http.StatusNotFound)
+			return
+		}
 
-	if len(parts) == 2 || (len(parts) == 3 && parts[2] == "") { // PATH: "/igcinfo" or "/igcinfo/" (NOTE: the browser seems to automatically add the second slash for THIS path)
-		http.Error(w, "Not found at root.", http.StatusNotFound)
-		return
-	}
+		//                          //
+		/* ---------------------------
+		 	PATH: /igcinfo/api/...
+		--------------------------- */
+	//                          //
+	/*
+		// Remove the first part of the url (/igcinfo) to make it more natural
+		// to work from the standpoint of "/api/" being the root
+		parts = parts[2:]
 
-	//							//
-	/* ---------------------------
-	 	PATH: /igcinfo/api/...
-	--------------------------- */
-	//							//
+		fmt.Fprintln(w, parts)
 
-	// Remove the first part of the url (/igcinfo) to make it more natural
-	// to work from the standpoint of "/api/" being the root
-	parts = parts[2:]
+		switch len(parts) {
+		case 1: // PATH: "/api"
+			handlerAPI(w, r)
+		case 2: // PATH "/api/.."
+			if parts[1] == "" { // "/api/"
+				handlerAPI(w, r)
+			} else { // "/api/.."
+				if numericPath.MatchString(parts[1]) {
+					handlerAPIID(w, r)
+				} else {
+					handlerAPIIGC(w, r)
+				}
+			}
+		default:
+			http.Error(w, "WTF R U DING KIDDO", http.StatusNotFound)
+			return
+		}
 
-	//fmt.Fprintln(w, parts)
-
-	if len(parts) == 1 || (len(parts) == 2 && parts[1] == "") { // PATH: "/api" or "/api/"
-		w.Header().Add("content-type", "application/json") // Set the response type
-
-		// Provide basic information about the api
-
-		//var uptime string // TODO: Convert to ISO 8601 format.
-		// time.Since(startTime).String() might be useful (Format: 1h2m0.3s)
-		var info APIInfo
-
-		//ts := tds.UTC().Format("2006-01-02T15:04:05-0700")
-
-		info.Uptime = time.Since(startTime).Seconds() // Just get the seconds for now
-		info.Info = "Service for IGC tracks"
-		info.Version = "V1"
-
-		json.NewEncoder(w).Encode(&info)
-	} else { // /api/<rubbish>
-		http.Error(w, "Nothind found at /api/", http.StatusNotFound)
-		return
-	} /*else if ( GET /api/igc ) {
-		w.Header().Add("content-type", "application/json")
-	} else if ( GET /api/igc/<id> ) {
-		w.Header().Add("content-type", "application/json")
-	} else if ( GET /api/igc/<id>/<field>) {
-		w.Header().Add("content-type", "text/plain")
-	} */
-
-	// Status 200: OK
+	*/
 }
 
-// This function handles everything to do with the API, NOTE: Doesn't work as everything after /igcinfo/ is treated in the same function
+// Handles "/igcinfo/api"
 func handlerAPI(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("content-type", "application/json") // Set the response type
+
+	var info APIInfo
+	//ts := tds.UTC().Format("2006-01-02T15:04:05-0700")
+
+	info.Uptime = time.Since(startTime).String() // TODO: make ISO 8601
+	info.Info = "Service for IGC tracks"
+	info.Version = "V1"
+
+	json.NewEncoder(w).Encode(&info)
+}
+
+// Handles "/igcinfo/api/igc"
+func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("content-type", "application/json")
 	parts := strings.Split(r.URL.Path, "/")
 
-	parts = parts[2:]
-	fmt.Fprintln(w, parts)
+	// Remove "[ igcinifo api]" to make it more natural to work with "[igc]" being the start of the array
+	parts = parts[3:]
+
+	switch len(parts) {
+	case 1: // PATH: /igc
+		switch r.Method {
+		case "GET":
+			json.NewEncoder(w).Encode(&trackIDs)
+		case "POST":
+			var url jsonURL
+			json.NewDecoder(r.Body).Decode(&url)
+
+			//var url2 string
+			//json.Unmarshal()
+
+			newTrack, _ := igc.Parse(url.URL)
+			tracks = append(tracks, newTrack)
+			trackIDs = append(trackIDs, lastID+1)
+			lastID++
+		default: // Only POST and GET methods are implemented, any other type aborts
+			return
+		}
+	case 2: // PATH: /igc/..
+		if numericPath.MatchString(parts[2]) { // PATH: /igc/<ID>
+			// Return id
+		}
+
+	default:
+		http.Error(w, "WTF R U DING KIDDO=(", http.StatusNotFound)
+		return
+	}
+}
+
+func handlerAPIID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("content-type", "application/json")
 }
