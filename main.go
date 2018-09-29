@@ -18,10 +18,10 @@ var (
 	startTime      time.Time // The start time of the application/API
 	numericPath, _ = regexp.Compile("[0-9]")
 	tracks         []igc.Track // The tracks retrieved by the user
-	trackIDs       []int       // The IDs of the tracks	// TODO: Make ID's strings? Look at Track.Header.UniqueID (it is a string)
-	lastID         int         // Last used ID
+	//trackIDs       []int       // The IDs of the tracks	// TODO: Make ID's strings? Look at Track.Header.UniqueID (it is a string)
+	//lastID         int         // Last used ID
 
-	// trackIDs map[string]igc.Track
+	trackIDs map[string]igc.Track
 )
 
 type jsonURL struct {
@@ -30,6 +30,7 @@ type jsonURL struct {
 
 func init() {
 	startTime = time.Now()
+	trackIDs = make(map[string]igc.Track)
 }
 
 func main() {
@@ -99,28 +100,38 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 	case 1: // PATH: /igc/
 		switch r.Method {
 		case "GET":
-			fmt.Println("GETTING", trackIDs)
-			json.NewEncoder(w).Encode(&trackIDs)
+			//fmt.Println("GETTING", trackIDs)
+			var IDs []string // TODO: Make this return empty array and not "null"
+
+			fmt.Println(IDs)
+
+			for index := range trackIDs { // Get the indexes of the map and return the new array, TODO: Find better way to do this if possible
+				IDs = append(IDs, index)
+			}
+
+			json.NewEncoder(w).Encode(&IDs)
 		case "POST":
 			var url jsonURL
 			json.NewDecoder(r.Body).Decode(&url)
 
-			newTrack, err := igc.Parse(url.URL)
+			newTrack, err := igc.ParseLocation(url.URL)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusNotFound)
 				return
 			}
 
 			tracks = append(tracks, newTrack)
-			trackIDs = append(trackIDs, lastID)
-			lastID++
+
+			trackIDs[newTrack.Header.UniqueID] = newTrack // Map the uniqueID to the track
+			//trackIDs = append(trackIDs, lastID)
+			//lastID++
 		default: // Only POST and GET methods are implemented, any other type aborts
 			return
 		}
 	case 2: // PATH: /igc/../
 		if numericPath.MatchString(parts[1]) { // PATH: /igc/<ID>
 			ID, _ := strconv.Atoi(parts[1]) // No need for error checking, as the if statement checks for numeric values (TODO: possibly change this? Remove if and check for error)
-			// Return id
+
 			var tInfo TrackInfo
 
 			tInfo.HDate = tracks[ID].Header.Date
@@ -134,6 +145,7 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 
 		} else {
 			http.Error(w, "Invalid ID", http.StatusNotFound) // TODO: Change error code to something more fitting (perhaps)
+			return
 		}
 	case 3:
 		w.Header().Add("content-type", "text/plain")
