@@ -1,12 +1,10 @@
 {
-  "name": "Start on Heroku: Go",
-  "description": "Go Getting Started Example App",
+  "name": "Assignment 1 in IMT2681 - Cancer Technologies",
+  "description": "Cancer",
   "keywords": [
-    "getting-started",
-    "go",
-    "sample",
-    "example"
+    "cancer",
+    "tumors"
   ],
-  "website": "http://github.com/heroku/go-getting-started",
-  "repository": "http://github.com/heroku/go-getting-started"
+  "website": "https://github.com/hakonschia/IMT2681-Assignment1",
+  "repository": "https://github.com/hakonschia/IMT2681-Assignment1"
 }
