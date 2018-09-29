@@ -6,19 +6,47 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 )
 
-var startTime time.Time // The start time of the application
+var (
+	startTime      time.Time // The start time of the application
+	numericPath, _ = regexp.Compile("[0-9]")
+)
 
 func init() {
 	startTime = time.Now()
 }
 
+func main() {
+	port, ok := os.LookupEnv("PORT")
+	if !ok {
+		port = "8080"
+	}
+	port = ":" + port
+
+	http.HandleFunc("/", handlerRoot)
+	http.HandleFunc("/igcinfo/", router)
+	//http.HandleFunc("/igcinfo/API", handlerAPI)
+
+	err := http.ListenAndServe(port, nil)
+
+	log.Fatalf("Server error: %s", err)
+}
+
 // Handles root errors (no path)
 func handlerRoot(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Not allowed at root.", http.StatusNotFound)
+}
+
+func router(w http.ResponseWriter, r *http.Request) {
+	//parts := strings.Split(r.URL.Path, "/") // Split the url into all its parts
+	path := r.URL.Path
+	switch {
+		case numericPath.MatchString(path)
+	}
 }
 
 // Handles only when IGC is the path (basically only error handling)
@@ -78,20 +106,4 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 
 	parts = parts[2:]
 	fmt.Fprintln(w, parts)
-}
-
-func main() {
-	port, ok := os.LookupEnv("PORT")
-	if !ok {
-		port = "8080"
-	}
-	port = ":" + port
-
-	http.HandleFunc("/", handlerRoot)
-	http.HandleFunc("/igcinfo/", handlerIGC)
-	//http.HandleFunc("/igcinfo/API", handlerAPI)
-
-	err := http.ListenAndServe(port, nil)
-
-	log.Fatalf("Server error: %s", err)
 }
