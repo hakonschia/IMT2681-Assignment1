@@ -68,7 +68,7 @@ func handlerIGC(w http.ResponseWriter, r *http.Request) {
 	// to work from the standpoint of "/api/" being the root
 	parts = parts[2:]
 
-	if len(parts) == 1 || (len(parts) == 2 && parts[1] == "") { // PATH: "/api/" or "/api"
+	if len(parts) == 1 || (len(parts) == 2 && parts[1] == "") { // PATH: "/api" or "/api/"
 		w.Header().Add("content-type", "application/json") // Set the response type
 
 		// Provide basic information about the api
@@ -77,11 +77,9 @@ func handlerIGC(w http.ResponseWriter, r *http.Request) {
 		// time.Since(startTime).String() might be useful (Format: 1h2m0.3s)
 		var info APIInfo
 
-		//td := time.Now().Sub(startTime)
-
 		//ts := tds.UTC().Format("2006-01-02T15:04:05-0700")
 
-		info.Uptime = "s" // Just get the seconds for now
+		info.Uptime = time.Now().Sub(startTime) // Just get the seconds for now
 		info.Info = "Service for IGC tracks"
 		info.Version = "V1"
 
