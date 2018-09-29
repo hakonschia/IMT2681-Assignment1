@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,11 +15,13 @@ import (
 )
 
 var (
-	startTime      time.Time // The start time of the application
+	startTime      time.Time // The start time of the application/API
 	numericPath, _ = regexp.Compile("[0-9]")
 	tracks         []igc.Track // The tracks retrieved by the user
-	trackIDs       []int       // The IDs of the tracks
+	trackIDs       []int       // The IDs of the tracks	// TODO: Make ID's strings? Look at Track.Header.UniqueID (it is a string)
 	lastID         int         // Last used ID
+
+	// trackIDs map[string]igc.Track
 )
 
 type jsonURL struct {
@@ -30,16 +33,15 @@ func init() {
 }
 
 func main() {
-	port, ok := os.LookupEnv("PORT")
-	if !ok {
-		port = "8080"
+	port, portOk := os.LookupEnv("PORT")
+	if !portOk {
+		port = "8080" // 8080 is used as the default port
 	}
 
 	fmt.Println("Port is:", port)
 
-	//http.HandleFunc("/igcinfo/api/igc")
-	http.HandleFunc("/igcinfo/api/igc", handlerAPIIGC)
-	http.HandleFunc("/igcinfo/api", handlerAPI)
+	http.HandleFunc("/igcinfo/api/igc/", handlerAPIIGC)
+	http.HandleFunc("/igcinfo/api/", handlerAPI)
 	http.HandleFunc("/igcinfo/", handlerIGCINFO)
 	http.HandleFunc("/", handlerRoot)
 
@@ -48,52 +50,26 @@ func main() {
 	log.Fatalf("Server error: %s", err)
 }
 
+// Removes empty strings from a given array
+func removeEmpty(arr []string) []string {
+	var newArr []string
+	for _, str := range arr {
+		if str != "" {
+			newArr = append(newArr, str)
+		}
+	}
+
+	return newArr
+}
+
 // Handles root errors (no path)
 func handlerRoot(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("NICE BRUR")
 	http.Error(w, "Not allowed at root.", http.StatusNotFound)
 }
 
 // Handles only when IGC is the path (basically only error handling)
 func handlerIGCINFO(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Not allowed at /igcinfo.", http.StatusNotFound)
-	/*
-		if len(parts) == 2 { // PATH: "/igcinfo/" (the browser will add a backslash at the end)
-			http.Error(w, "Not allowed at /igcinfo.", http.StatusNotFound)
-			return
-		}
-
-		//                          //
-		/* ---------------------------
-		 	PATH: /igcinfo/api/...
-		--------------------------- */
-	//                          //
-	/*
-		// Remove the first part of the url (/igcinfo) to make it more natural
-		// to work from the standpoint of "/api/" being the root
-		parts = parts[2:]
-
-		fmt.Fprintln(w, parts)
-
-		switch len(parts) {
-		case 1: // PATH: "/api"
-			handlerAPI(w, r)
-		case 2: // PATH "/api/.."
-			if parts[1] == "" { // "/api/"
-				handlerAPI(w, r)
-			} else { // "/api/.."
-				if numericPath.MatchString(parts[1]) {
-					handlerAPIID(w, r)
-				} else {
-					handlerAPIIGC(w, r)
-				}
-			}
-		default:
-			http.Error(w, "WTF R U DING KIDDO", http.StatusNotFound)
-			return
-		}
-
-	*/
 }
 
 // Handles "/igcinfo/api"
@@ -116,34 +92,55 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.URL.Path, "/")
 
 	// Remove "[ igcinifo api]" to make it more natural to work with "[igc]" being the start of the array
-	parts = parts[3:]
+	//fmt.Println("Len:", len(parts))
+	parts = removeEmpty(parts[3:])
 
 	switch len(parts) {
-	case 1: // PATH: /igc
+	case 1: // PATH: /igc/
 		switch r.Method {
 		case "GET":
+			fmt.Println("GETTING", trackIDs)
 			json.NewEncoder(w).Encode(&trackIDs)
 		case "POST":
 			var url jsonURL
 			json.NewDecoder(r.Body).Decode(&url)
 
-			//var url2 string
-			//json.Unmarshal()
+			newTrack, err := igc.Parse(url.URL)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
 
-			newTrack, _ := igc.Parse(url.URL)
 			tracks = append(tracks, newTrack)
-			trackIDs = append(trackIDs, lastID+1)
+			trackIDs = append(trackIDs, lastID)
 			lastID++
 		default: // Only POST and GET methods are implemented, any other type aborts
 			return
 		}
-	case 2: // PATH: /igc/..
-		if numericPath.MatchString(parts[2]) { // PATH: /igc/<ID>
+	case 2: // PATH: /igc/../
+		if numericPath.MatchString(parts[1]) { // PATH: /igc/<ID>
+			ID, _ := strconv.Atoi(parts[1]) // No need for error checking, as the if statement checks for numeric values (TODO: possibly change this? Remove if and check for error)
 			// Return id
-		}
+			var tInfo TrackInfo
 
+			tInfo.HDate = tracks[ID].Header.Date
+			tInfo.Pilot = tracks[ID].Header.Pilot
+			tInfo.GliderID = tracks[ID].Header.GliderID
+			tInfo.Glider = tracks[ID].Header.GliderType
+			tInfo.TrackLength = tracks[ID].Task.Distance()
+
+			//fmt.Println("ID:", ID, tracks[ID])
+			json.NewEncoder(w).Encode(&tInfo)
+
+		} else {
+			http.Error(w, "Invalid ID", http.StatusNotFound) // TODO: Change error code to something more fitting (perhaps)
+		}
+	case 3:
+		w.Header().Add("content-type", "text/plain")
+		ID, _ := strconv.Atoi(parts[1])
+		ID = ID // DONT QUESTION IT
 	default:
-		http.Error(w, "WTF R U DING KIDDO=(", http.StatusNotFound)
+		http.Error(w, "WTF R U DING KIDDO=()", http.StatusNotFound)
 		return
 	}
 }
