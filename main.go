@@ -28,7 +28,7 @@ func main() {
 	port = ":" + port
 
 	http.HandleFunc("/", handlerRoot)
-	http.HandleFunc("/igcinfo/", router)
+	http.HandleFunc("/igcinfo/", handlerIGC)
 	//http.HandleFunc("/igcinfo/API", handlerAPI)
 
 	err := http.ListenAndServe(port, nil)
@@ -43,10 +43,10 @@ func handlerRoot(w http.ResponseWriter, r *http.Request) {
 
 func router(w http.ResponseWriter, r *http.Request) {
 	//parts := strings.Split(r.URL.Path, "/") // Split the url into all its parts
-	path := r.URL.Path
-	switch {
-		case numericPath.MatchString(path)
-	}
+	//path := r.URL.Path
+	/*switch {
+		case: numericPath.MatchString(path)
+	}*/
 }
 
 // Handles only when IGC is the path (basically only error handling)
