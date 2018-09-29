@@ -69,8 +69,7 @@ func handlerIGC(w http.ResponseWriter, r *http.Request) {
 	parts = parts[2:]
 
 	if len(parts) == 1 || (len(parts) == 2 && parts[1] == "") { // PATH: "/api/" or "/api"
-		//w.Header().Add("content-type", "application/json") // Set the response type
-		http.Header.Add(w.Header(), "content-type", "application/json")
+		w.Header().Add("content-type", "application/json") // Set the response type
 
 		// Provide basic information about the api
 
@@ -87,7 +86,10 @@ func handlerIGC(w http.ResponseWriter, r *http.Request) {
 		info.Version = "V1"
 
 		json.NewEncoder(w).Encode(&info)
-	} /*else if ( GET /api/igc ) {
+	} else if len(parts) == 3 && numericPath.MatchString(parts[2]) {
+		fmt.Fprintln(w, "ID = ", parts[2])
+	}
+	/*else if ( GET /api/igc ) {
 		w.Header().Add("content-type", "application/json")
 	} else if ( GET /api/igc/<id> ) {
 		w.Header().Add("content-type", "application/json")
