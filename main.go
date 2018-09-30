@@ -6,8 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -15,10 +13,9 @@ import (
 )
 
 var (
-	startTime      time.Time // The start time of the application/API
-	numericPath, _ = regexp.Compile("[0-9]")
-	tracks         []igc.Track // The tracks retrieved by the user
-	trackIDs       map[string]igc.Track
+	startTime time.Time            // The start time of the application/API
+	tracks    []igc.Track          // The tracks retrieved by the user
+	trackIDs  map[string]igc.Track // The uniqueID in igc.track is used as the indexing
 )
 
 type jsonURL struct {
@@ -65,7 +62,7 @@ func handlerRoot(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Not allowed at root.", http.StatusNotFound)
 }
 
-// Handles only when IGC is the path (basically only error handling)
+// Handles /igcinfo/ (error handling)
 func handlerIGCINFO(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Not allowed at /igcinfo.", http.StatusNotFound)
 }
@@ -90,8 +87,7 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.URL.Path, "/")
 
 	// Remove "[ igcinifo api]" to make it more natural to work with "[igc]" being the start of the array
-	//fmt.Println("Len:", len(parts))
-	parts = removeEmpty(parts[3:])
+	parts = removeEmpty(parts[3:]) // Remove the empty strings as well, this makes "/igc/" and "/igc" the same
 
 	switch len(parts) {
 	case 1: // PATH: /igc/
@@ -99,48 +95,104 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 		case "GET":
 			var IDs []string // TODO: Make this return empty array and not "null"
 
-			fmt.Println(IDs)
-
 			for index := range trackIDs { // Get the indexes of the map and return the new array, TODO: Find better way to do this if possible
 				IDs = append(IDs, index)
 			}
 
+			//fmt.Fprint(w, IDs) // This returns an empty array instead of null, but is this correct for "application/json"?
+			// Also it doesnt work, browser says "Expected ',' instead of 'S'"
 			json.NewEncoder(w).Encode(&IDs)
+
 		case "POST":
 			var url jsonURL
 			json.NewDecoder(r.Body).Decode(&url)
 
 			newTrack, err := igc.ParseLocation(url.URL)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusNotFound)
+			if err != nil { // If the passed URL couldn't be parsed the function aborts
+				http.Error(w, "Invalid URL", http.StatusNotFound)
 				return
 			}
 
 			tracks = append(tracks, newTrack)
 
 			trackIDs[newTrack.Header.UniqueID] = newTrack // Map the uniqueID to the track
+
 		default: // Only POST and GET methods are implemented, any other type aborts
 			return
 		}
-	case 2: // PATH: /igc/../
-		if numericPath.MatchString(parts[1]) { // PATH: /igc/<ID>	//TODO: ID is no longer numeric, look into regexp solution
-			ID, _ := strconv.Atoi(parts[1]) // No need for error checking, as the if statement checks for numeric values (TODO: possibly change this? Remove if and check for error)
 
+	case 3: // PATH: /igc/<id>/<field> // TODO: Fix shitty shit code
+		if track, ok := trackIDs[parts[1]]; ok { // If the ID was found in "trackIDs", it exists
+			w.Header().Add("content-type", "text/plain")
+
+			//marshalled, _ := json.Marshal(track)
+			//fmt.Println(string(marshalled))
 			var tInfo TrackInfo
 
-			tInfo.HDate = tracks[ID].Header.Date
-			tInfo.Pilot = tracks[ID].Header.Pilot
-			tInfo.GliderID = tracks[ID].Header.GliderID
-			tInfo.Glider = tracks[ID].Header.GliderType
-			tInfo.TrackLength = tracks[ID].Task.Distance()
+			tInfo.HDate = track.Header.Date
+			tInfo.Pilot = track.Header.Pilot
+			tInfo.GliderID = track.Header.GliderID
+			tInfo.Glider = track.Header.GliderType
+			tInfo.TrackLength = track.Task.Distance()
+
+			jsonString, _ := json.Marshal(tInfo) // Convert the TrackInfo to a json string
+			//fmt.Println(string(jsonString))
+
+			var data map[string]interface{} // Create a map out of the json string (the json field is the index). Map to interface to allow all types
+			json.Unmarshal([]byte(jsonString), &data)
+
+			res := data[parts[2]]
+			fmt.Println(parts[2], ":", res)
+			/*
+				switch parts[2] {
+				case "pilot":
+					fmt.Println(track.Header.Pilot)
+					//fmt.Fprintln(w, track.Header.Pilot)
+					json.NewEncoder(w).Encode(track.Header.Pilot) // Problems with fmt.Fprint, get "Expected '<first_letter>'" error in postman/browser
+				case "glider":
+					fmt.Fprintln(w, track.Header.GliderType)
+				case "glider_id":
+					fmt.Fprintln(w, track.Header.GliderID)
+				case "track_length":
+					fmt.Fprintln(w, track.Task.Distance())
+				case "H_date":
+					fmt.Fprintln(w, track.Header.Date)
+				default:
+					http.Error(w, "Unknown field given", http.StatusNotFound)
+					return
+				}
+
+			*/
+		} else {
+			http.Error(w, "Invalid ID", http.StatusNotFound) // TODO: Change error code to something more fitting (perhaps)
+			return
+		}
+
+	case 2: // PATH: /igc/<id>/
+		if track, ok := trackIDs[parts[1]]; ok {
+			var tInfo TrackInfo
+
+			tInfo.HDate = track.Header.Date
+			tInfo.Pilot = track.Header.Pilot
+			tInfo.GliderID = track.Header.GliderID
+			tInfo.Glider = track.Header.GliderType
+			tInfo.TrackLength = track.Task.Distance()
+
+			jsonString, _ := json.Marshal(tInfo)
+			fmt.Println(string(jsonString))
+
+			var dat map[string]string
+			json.Unmarshal([]byte(jsonString), &dat)
+
+			invoices := dat["pilot"]
+			fmt.Println(invoices)
 
 			json.NewEncoder(w).Encode(&tInfo)
 		} else {
 			http.Error(w, "Invalid ID", http.StatusNotFound) // TODO: Change error code to something more fitting (perhaps)
 			return
 		}
-	case 3: // PATH: /igc/<id>/<field>
-		w.Header().Add("content-type", "text/plain")
+
 	default:
 		http.Error(w, "WTF R U DING KIDDO=()", http.StatusNotFound)
 		return
