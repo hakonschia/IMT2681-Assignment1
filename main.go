@@ -15,7 +15,7 @@ import (
 var (
 	startTime time.Time            // The start time of the application/API
 	tracks    []igc.Track          // The tracks retrieved by the user
-	trackIDs  map[string]igc.Track // The uniqueID in igc.Track.Header is used as the indexing
+	trackIDs  map[string]igc.Track // The uniqueID in igc.Track.Header is used as the key
 )
 
 type jsonURL struct {
@@ -95,11 +95,11 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 		case "GET":
 			var IDs []string
 
-			for index := range trackIDs { // Get the indexes of the map and return the new array, TODO: Find better way to do this if possible
-				IDs = append(IDs, index)
+			for key := range trackIDs { // Get the keys of the map and return the new array
+				IDs = append(IDs, key)
 			}
 
-			fmt.Fprint(w, IDs) // This returns an empty array instead of null, but is this correct for "application/json"?
+			fmt.Fprintln(w, IDs) // This returns an empty array instead of null, but is this correct for "application/json"?
 			//json.NewEncoder(w).Encode(&IDs)
 
 		case "POST":
