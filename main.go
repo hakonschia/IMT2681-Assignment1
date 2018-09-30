@@ -15,7 +15,7 @@ import (
 var (
 	startTime time.Time            // The start time of the application/API
 	tracks    []igc.Track          // The tracks retrieved by the user
-	trackIDs  map[string]igc.Track // The uniqueID in igc.track is used as the indexing
+	trackIDs  map[string]igc.Track // The uniqueID in igc.Track.Header is used as the indexing
 )
 
 type jsonURL struct {
@@ -121,84 +121,49 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-	case 3: // PATH: /igc/<id>/<field> // TODO: Fix shitty shit code
-		if track, ok := trackIDs[parts[1]]; ok { // If the ID was found in "trackIDs", it exists
-			w.Header().Add("content-type", "text/plain")
+	case 2:
+		handlerAPIID(w, r)
+	case 3:
+		handlerAPIID(w, r)
 
-			//marshalled, _ := json.Marshal(track)
-			//fmt.Println(string(marshalled))
-			var tInfo TrackInfo
-
-			tInfo.HDate = track.Header.Date
-			tInfo.Pilot = track.Header.Pilot
-			tInfo.GliderID = track.Header.GliderID
-			tInfo.Glider = track.Header.GliderType
-			tInfo.TrackLength = track.Task.Distance()
-
-			jsonString, _ := json.Marshal(tInfo) // Convert the TrackInfo to a json string
-			//fmt.Println(string(jsonString))
-
-			var data map[string]interface{} // Create a map out of the json string (the json field is the index). Map to interface to allow all types
-			json.Unmarshal([]byte(jsonString), &data)
-
-			res := data[parts[2]]
-			fmt.Println(parts[2], ":", res)
-			/*
-				switch parts[2] {
-				case "pilot":
-					fmt.Println(track.Header.Pilot)
-					//fmt.Fprintln(w, track.Header.Pilot)
-					json.NewEncoder(w).Encode(track.Header.Pilot) // Problems with fmt.Fprint, get "Expected '<first_letter>'" error in postman/browser
-				case "glider":
-					fmt.Fprintln(w, track.Header.GliderType)
-				case "glider_id":
-					fmt.Fprintln(w, track.Header.GliderID)
-				case "track_length":
-					fmt.Fprintln(w, track.Task.Distance())
-				case "H_date":
-					fmt.Fprintln(w, track.Header.Date)
-				default:
-					http.Error(w, "Unknown field given", http.StatusNotFound)
-					return
-				}
-
-			*/
-		} else {
-			http.Error(w, "Invalid ID", http.StatusNotFound) // TODO: Change error code to something more fitting (perhaps)
-			return
-		}
-
-	case 2: // PATH: /igc/<id>/
-		if track, ok := trackIDs[parts[1]]; ok {
-			var tInfo TrackInfo
-
-			tInfo.HDate = track.Header.Date
-			tInfo.Pilot = track.Header.Pilot
-			tInfo.GliderID = track.Header.GliderID
-			tInfo.Glider = track.Header.GliderType
-			tInfo.TrackLength = track.Task.Distance()
-
-			jsonString, _ := json.Marshal(tInfo)
-			fmt.Println(string(jsonString))
-
-			var dat map[string]string
-			json.Unmarshal([]byte(jsonString), &dat)
-
-			invoices := dat["pilot"]
-			fmt.Println(invoices)
-
-			json.NewEncoder(w).Encode(&tInfo)
-		} else {
-			http.Error(w, "Invalid ID", http.StatusNotFound) // TODO: Change error code to something more fitting (perhaps)
-			return
-		}
-
-	default:
-		http.Error(w, "WTF R U DING KIDDO=()", http.StatusNotFound)
+	default: // More than 4 parts in the url
+		http.Error(w, "", http.StatusNotFound)
 		return
 	}
 }
 
+// Handles /igcinfo/api/igc/<ID> and /igcinfo/api/igc/<id>/<field>
 func handlerAPIID(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("content-type", "application/json")
+	parts := strings.Split(r.URL.Path, "/")
+	parts = removeEmpty(parts[4:])
+
+	if track, ok := trackIDs[parts[0]]; ok { // The track exists
+		tInfo := TrackInfo{ // Copy the relevant information into a TrackInfo object
+			track.Header.Date,
+			track.Header.Pilot,
+			track.Header.GliderID,
+			track.Header.GliderType,
+			track.Task.Distance(),
+		}
+
+		if len(parts) == 1 { // /<id>
+			w.Header().Add("content-type", "application/json")
+			json.NewEncoder(w).Encode(&tInfo)
+		} else { // /<id>/<field>
+			w.Header().Add("content-type", "text/plain")
+			jsonString, _ := json.Marshal(tInfo) // Convert the TrackInfo to a json string
+
+			var data map[string]interface{} // Create a map out of the json string (the json field is the index). Map to interface to allow all types
+			json.Unmarshal([]byte(jsonString), &data)
+
+			if res := data[parts[1]]; res != nil { // If no matches were found, res will be set to nil
+				fmt.Println(parts[1], ":", res)
+				//fmt.Fprintln(w, res)
+			} else {
+				http.Error(w, "Invalid field given", http.StatusNotFound)
+			}
+		}
+	} else { // ID was not found
+		http.Error(w, "Invalid ID given", http.StatusNotFound)
+	}
 }
