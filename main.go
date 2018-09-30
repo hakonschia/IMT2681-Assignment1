@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"reflect"
 	"strings"
 	"time"
 
@@ -14,8 +15,7 @@ import (
 
 var (
 	startTime time.Time            // The start time of the application/API
-	tracks    []igc.Track          // The tracks retrieved by the user
-	trackIDs  map[string]igc.Track // The uniqueID in igc.Track.Header is used as the key
+	tracks    map[string]igc.Track // Maps the ID to a track. igc.Track.Header. UniqueID is used as the key
 )
 
 type jsonURL struct {
@@ -24,7 +24,7 @@ type jsonURL struct {
 
 func init() {
 	startTime = time.Now()
-	trackIDs = make(map[string]igc.Track)
+	tracks = make(map[string]igc.Track)
 }
 
 func main() {
@@ -93,14 +93,8 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 	case 1: // PATH: /igc/
 		switch r.Method {
 		case "GET":
-			var IDs []string
-
-			for key := range trackIDs { // Put the keys of the map in the new array
-				IDs = append(IDs, key)
-			}
-
-			fmt.Fprintln(w, IDs) // This returns an empty array instead of null, but is this correct for "application/json"?
-			//json.NewEncoder(w).Encode(&IDs)
+			IDs := reflect.ValueOf(tracks).MapKeys() // Get the keys of the map
+			fmt.Fprintln(w, IDs)
 
 		case "POST":
 			var url jsonURL
@@ -112,10 +106,8 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			tracks = append(tracks, newTrack)
-
 			newID := newTrack.Header.UniqueID
-			trackIDs[newID] = newTrack // Map the uniqueID to the track
+			tracks[newID] = newTrack // Map the uniqueID to the track
 
 			data := make(map[string]string)
 			data["id"] = newID // Map the key "id" to the newly assigned ID
@@ -140,7 +132,7 @@ func handlerAPIID(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.URL.Path, "/")
 	parts = removeEmpty(parts[4:])
 
-	if track, ok := trackIDs[parts[0]]; ok { // The track exists
+	if track, ok := tracks[parts[0]]; ok { // The track exists
 		tInfo := TrackInfo{ // Copy the relevant information into a TrackInfo object
 			HDate:       track.Header.Date,
 			Pilot:       track.Header.Pilot,
