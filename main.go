@@ -87,7 +87,7 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.URL.Path, "/")
 
 	// Remove "[ igcinifo api]" to make it more natural to work with "[igc]" being the start of the array
-	parts = removeEmpty(parts[3:]) // Remove the empty strings as well, this makes "/igc/" and "/igc" the same
+	parts = removeEmpty(parts[3:]) // Remove the empty strings, this makes it so "/igc/" and "/igc" is treated as the same
 
 	switch len(parts) {
 	case 1: // PATH: /igc/
@@ -95,7 +95,7 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 		case "GET":
 			var IDs []string
 
-			for key := range trackIDs { // Get the keys of the map and return the new array
+			for key := range trackIDs { // Put the keys of the map in the new array
 				IDs = append(IDs, key)
 			}
 
@@ -118,19 +118,18 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 			trackIDs[newID] = newTrack // Map the uniqueID to the track
 
 			data := make(map[string]string)
-			data["id"] = newID // Map "id" to the new ID and encode it as a json object
+			data["id"] = newID // Map the key "id" to the newly assigned ID
 
-			json.NewEncoder(w).Encode(data)
+			json.NewEncoder(w).Encode(data) // Encode the map as a JSON object
 
 		default: // Only POST and GET methods are implemented, any other type aborts
 			return
 		}
 
 	case 2, 3: // 2 or 3 parts means /<id> or /<id>/<field>
-		fmt.Println("In CASE 2, 3")
 		handlerAPIID(w, r)
 
-	default: // More than 4 parts in the url
+	default: // More than 3 parts in the url (after /api/) is not implemented
 		http.Error(w, "", http.StatusNotFound)
 		return
 	}
@@ -157,11 +156,11 @@ func handlerAPIID(w http.ResponseWriter, r *http.Request) {
 			w.Header().Add("content-type", "text/plain")
 			jsonString, _ := json.Marshal(tInfo) // Convert the TrackInfo to a json string
 
-			var trackFields map[string]interface{}           // Create a map out of the json string (the json field is the index). Map to interface to allow all types
-			json.Unmarshal([]byte(jsonString), &trackFields) // Unmarshaling converts the json string to a map
+			var trackFields map[string]interface{}   // Create a map out of the json string (the json field is the index). Map to interface to allow all types
+			json.Unmarshal(jsonString, &trackFields) // Unmarshaling converts the json string to a map
 
-			field := parts[1]                          //
-			if res := trackFields[field]; res != nil { // If no matches were found, res will be set to nil
+			field := parts[1]
+			if res := trackFields[field]; res != nil { // If no matches were found (unknown field entered), res will be set to nil
 				fmt.Fprintln(w, res)
 			} else {
 				http.Error(w, "Invalid field given", http.StatusNotFound)
