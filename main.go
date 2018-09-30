@@ -72,9 +72,9 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("content-type", "application/json")
 
 	info := APIInfo{
-		time.Since(startTime).String(), // Uptime TODO: Format to ISO8601
-		"Service for IGC tracks",       // Info
-		"V1",                           // Version
+		Uptime:  time.Since(startTime).String(), // Uptime TODO: Format to ISO8601
+		Info:    "Service for IGC tracks",
+		Version: "V1",
 	}
 	//ts := tds.UTC().Format("P2006-01-02T15:04:05-0700")
 
@@ -144,11 +144,11 @@ func handlerAPIID(w http.ResponseWriter, r *http.Request) {
 
 	if track, ok := trackIDs[parts[0]]; ok { // The track exists
 		tInfo := TrackInfo{ // Copy the relevant information into a TrackInfo object
-			track.Header.Date,
-			track.Header.Pilot,
-			track.Header.GliderID,
-			track.Header.GliderType,
-			track.Task.Distance(),
+			HDate:       track.Header.Date,
+			Pilot:       track.Header.Pilot,
+			GliderID:    track.Header.GliderID,
+			Glider:      track.Header.GliderType,
+			TrackLength: track.Task.Distance(),
 		}
 
 		if len(parts) == 1 { // /<id>
