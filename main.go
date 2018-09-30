@@ -126,9 +126,8 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-	case 2: // 2 or 3 parts means /<ID>
-		handlerAPIID(w, r)
-	case 3:
+	case 2, 3: // 2 or 3 parts means /<id> or /<id>/<field>
+		fmt.Println("In CASE 2, 3")
 		handlerAPIID(w, r)
 
 	default: // More than 4 parts in the url
