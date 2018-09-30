@@ -126,7 +126,7 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-	case 2:
+	case 2: // 2 or 3 parts means /<ID>
 		handlerAPIID(w, r)
 	case 3:
 		handlerAPIID(w, r)
