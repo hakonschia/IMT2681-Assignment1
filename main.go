@@ -69,14 +69,14 @@ func handlerIGCINFO(w http.ResponseWriter, r *http.Request) {
 
 // Handles "/igcinfo/api"
 func handlerAPI(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("content-type", "application/json") // Set the response type
+	w.Header().Add("content-type", "application/json")
 
-	var info APIInfo
-	//ts := tds.UTC().Format("2006-01-02T15:04:05-0700")
-
-	info.Uptime = time.Since(startTime).String() // TODO: make ISO 8601
-	info.Info = "Service for IGC tracks"
-	info.Version = "V1"
+	info := APIInfo{
+		time.Since(startTime).String(), // Uptime TODO: Format to ISO8601
+		"Service for IGC tracks",       // Info
+		"V1",                           // Version
+	}
+	//ts := tds.UTC().Format("P2006-01-02T15:04:05-0700")
 
 	json.NewEncoder(w).Encode(&info)
 }
@@ -93,15 +93,14 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 	case 1: // PATH: /igc/
 		switch r.Method {
 		case "GET":
-			var IDs []string // TODO: Make this return empty array and not "null"
+			var IDs []string
 
 			for index := range trackIDs { // Get the indexes of the map and return the new array, TODO: Find better way to do this if possible
 				IDs = append(IDs, index)
 			}
 
-			//fmt.Fprint(w, IDs) // This returns an empty array instead of null, but is this correct for "application/json"?
-			// Also it doesnt work, browser says "Expected ',' instead of 'S'"
-			json.NewEncoder(w).Encode(&IDs)
+			fmt.Fprint(w, IDs) // This returns an empty array instead of null, but is this correct for "application/json"?
+			//json.NewEncoder(w).Encode(&IDs)
 
 		case "POST":
 			var url jsonURL
@@ -115,7 +114,13 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 
 			tracks = append(tracks, newTrack)
 
-			trackIDs[newTrack.Header.UniqueID] = newTrack // Map the uniqueID to the track
+			newID := newTrack.Header.UniqueID
+			trackIDs[newID] = newTrack // Map the uniqueID to the track
+
+			data := make(map[string]string)
+			data["id"] = newID // Map "id" to the new ID and encode it as a json object
+
+			json.NewEncoder(w).Encode(data)
 
 		default: // Only POST and GET methods are implemented, any other type aborts
 			return
@@ -153,12 +158,12 @@ func handlerAPIID(w http.ResponseWriter, r *http.Request) {
 			w.Header().Add("content-type", "text/plain")
 			jsonString, _ := json.Marshal(tInfo) // Convert the TrackInfo to a json string
 
-			var data map[string]interface{} // Create a map out of the json string (the json field is the index). Map to interface to allow all types
-			json.Unmarshal([]byte(jsonString), &data)
+			var trackFields map[string]interface{}           // Create a map out of the json string (the json field is the index). Map to interface to allow all types
+			json.Unmarshal([]byte(jsonString), &trackFields) // Unmarshaling converts the json string to a map
 
-			if res := data[parts[1]]; res != nil { // If no matches were found, res will be set to nil
-				fmt.Println(parts[1], ":", res)
-				//fmt.Fprintln(w, res)
+			field := parts[1]                          //
+			if res := trackFields[field]; res != nil { // If no matches were found, res will be set to nil
+				fmt.Fprintln(w, res)
 			} else {
 				http.Error(w, "Invalid field given", http.StatusNotFound)
 			}
