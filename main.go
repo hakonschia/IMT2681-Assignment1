@@ -49,7 +49,7 @@ func main() {
 	log.Fatalf("Server error: %s", err)
 }
 
-// Removes empty strings from a given array
+// Removes empty strings from an array
 func removeEmpty(arr []string) []string {
 	var newArr []string
 	for _, str := range arr {
@@ -61,16 +61,29 @@ func removeEmpty(arr []string) []string {
 	return newArr
 }
 
+// Formats time.Duration to a string according to the ISO8601 standards
+func formatISO8601(t time.Duration) string {
+	seconds := int(t.Seconds()) % 60 // These functions return the total time for each field (e.g 200 seconds)
+	minutes := int(t.Minutes()) % 60 // Using modulo we get the correct values for each field
+	hours := int(t.Hours()) % 24
+
+	days := hours / 24 // At this point we only do integer division
+	weeks := days / 7  // or else the lower calculations will be broken
+	months := days / 30
+	years := months / 12
+
+	return fmt.Sprint("P", years, "Y", months, "M", weeks, "W", days, "DT", hours, "H", minutes, "M", seconds, "S")
+}
+
 // Handles "/igcinfo/api"
 func handlerAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("content-type", "application/json")
 
 	info := APIInfo{
-		Uptime:  time.Since(startTime).String(), // Uptime TODO: Format to ISO8601
+		Uptime:  formatISO8601(time.Since(startTime)),
 		Info:    "Service for IGC tracks",
 		Version: "V1",
 	}
-	//ts := tds.UTC().Format("P2006-01-02T15:04:05-0700")
 
 	json.NewEncoder(w).Encode(&info)
 }
