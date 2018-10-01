@@ -37,8 +37,12 @@ func main() {
 
 	http.HandleFunc("/igcinfo/api/igc/", handlerAPIIGC)
 	http.HandleFunc("/igcinfo/api/", handlerAPI)
-	http.HandleFunc("/igcinfo/", handlerIGCINFO)
-	http.HandleFunc("/", handlerRoot)
+	http.HandleFunc("/igcinfo/", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Not allowed at /igcinfo.", http.StatusNotFound)
+	})
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Not allowed at root.", http.StatusNotFound)
+	})
 
 	err := http.ListenAndServe(":"+port, nil)
 
@@ -55,16 +59,6 @@ func removeEmpty(arr []string) []string {
 	}
 
 	return newArr
-}
-
-// Handles root errors (no path)
-func handlerRoot(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Not allowed at root.", http.StatusNotFound)
-}
-
-// Handles /igcinfo/ (error handling)
-func handlerIGCINFO(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Not allowed at /igcinfo.", http.StatusNotFound)
 }
 
 // Handles "/igcinfo/api"
@@ -158,7 +152,7 @@ func handlerAPIID(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Invalid field given", http.StatusNotFound)
 			}
 		}
-	} else { // ID was not found
+	} else { // ID/track was not found
 		http.Error(w, "Invalid ID given", http.StatusNotFound)
 	}
 }
