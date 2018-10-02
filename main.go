@@ -27,6 +27,7 @@ func init() {
 //
 // ----------------------------------------
 //
+
 func main() {
 	port, portOk := os.LookupEnv("PORT")
 	if !portOk {
@@ -67,16 +68,16 @@ func removeEmpty(arr []string) []string {
 
 // Formats time.Duration to a string according to the ISO8601 standards
 func formatISO8601(t time.Duration) string {
-	seconds := int(t.Seconds()) % 60 // These functions return the total time for each field (e.g 200 seconds)
-	minutes := int(t.Minutes()) % 60 // Using modulo we get the correct values for each field
-	hours := int(t.Hours()) % 24
+	seconds := int64(t.Seconds()) % 60 // These functions return the total time for each field (e.g 200 seconds)
+	minutes := int64(t.Minutes()) % 60 // Using modulo we get the correct values for each field
+	hours := int64(t.Hours()) % 24
 
-	days := hours / 24 // At this point we only do integer division
-	weeks := days / 7  // or else the lower calculations will be broken
-	months := days / 30
-	years := months / 12
+	totalHours := int64(t.Hours())
+	days := (totalHours / 24) % 30 // Doesnt really work since it's not 30 days in each month
+	months := (totalHours / (24 * 30)) % 12
+	years := totalHours / (24 * 30 * 12)
 
-	return fmt.Sprint("P", years, "Y", months, "M", weeks, "W", days, "DT", hours, "H", minutes, "M", seconds, "S")
+	return fmt.Sprint("P", years, "Y", months, "M", days, "DT", hours, "H", minutes, "M", seconds, "S")
 }
 
 // Handles "/igcinfo/api"
