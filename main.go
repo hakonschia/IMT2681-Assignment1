@@ -134,6 +134,7 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(data) // Encode the map as a JSON object
 
 		default: // Only POST and GET methods are implemented, any other type aborts
+			http.Error(w, "Not implemented", http.StatusNotImplemented)
 			return
 		}
 
