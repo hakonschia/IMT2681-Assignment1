@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -18,15 +19,14 @@ var (
 	tracks    map[string]igc.Track // Maps the ID to a track. igc.Track.Header. UniqueID is used as the key
 )
 
-type jsonURL struct {
-	URL string `json:"url"`
-}
-
 func init() {
 	startTime = time.Now()
 	tracks = make(map[string]igc.Track)
 }
 
+//
+// ----------------------------------------
+//
 func main() {
 	port, portOk := os.LookupEnv("PORT")
 	if !portOk {
@@ -48,6 +48,10 @@ func main() {
 
 	log.Fatalf("Server error: %s", err)
 }
+
+//
+// ----------------------------------------
+//
 
 // Removes empty strings from an array
 func removeEmpty(arr []string) []string {
@@ -104,10 +108,18 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintln(w, IDs)
 
 		case "POST":
-			var url jsonURL
-			json.NewDecoder(r.Body).Decode(&url)
+			bodyStr, _ := ioutil.ReadAll(r.Body)
 
-			newTrack, err := igc.ParseLocation(url.URL)
+			urlMap := make(map[string]string)
+			json.Unmarshal(bodyStr, &urlMap)
+
+			url := urlMap["url"]
+			if url == "" { // If the field name from the json is wrong no element will be found
+				http.Error(w, "Invalid POST", http.StatusNotFound)
+				return
+			}
+
+			newTrack, err := igc.ParseLocation(url)
 			if err != nil { // If the passed URL couldn't be parsed the function aborts
 				http.Error(w, "Invalid URL", http.StatusNotFound)
 				return
@@ -129,7 +141,7 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 		handlerAPIID(w, r)
 
 	default: // More than 3 parts in the url (after /api/) is not implemented
-		http.Error(w, "", http.StatusNotFound)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 }
@@ -139,7 +151,8 @@ func handlerAPIID(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.URL.Path, "/")
 	parts = removeEmpty(parts[4:])
 
-	if track, ok := tracks[parts[0]]; ok { // The track exists
+	id := parts[0]
+	if track, ok := tracks[id]; ok { // The track exists
 		tInfo := TrackInfo{ // Copy the relevant information into a TrackInfo object
 			HDate:       track.Header.Date,
 			Pilot:       track.Header.Pilot,
@@ -155,17 +168,17 @@ func handlerAPIID(w http.ResponseWriter, r *http.Request) {
 			w.Header().Add("content-type", "text/plain")
 			jsonString, _ := json.Marshal(tInfo) // Convert the TrackInfo to a json string
 
-			var trackFields map[string]interface{}   // Create a map out of the json string (the json field is the index). Map to interface to allow all types
+			var trackFields map[string]interface{}   // Create a map out of the json string (the json field is the key). Map to interface to allow all types
 			json.Unmarshal(jsonString, &trackFields) // Unmarshaling converts the json string to a map
 
 			field := parts[1]
 			if res := trackFields[field]; res != nil { // If no matches were found (unknown field entered), res will be set to nil
 				fmt.Fprintln(w, res)
 			} else {
-				http.Error(w, "Invalid field given", http.StatusNotFound)
+				http.Error(w, "Invalid field given", http.StatusBadRequest)
 			}
 		}
 	} else { // ID/track was not found
-		http.Error(w, "Invalid ID given", http.StatusNotFound)
+		http.Error(w, "Invalid ID given", http.StatusBadRequest)
 	}
 }
