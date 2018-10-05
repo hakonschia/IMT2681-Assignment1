@@ -16,7 +16,7 @@ import (
 
 var (
 	startTime time.Time            // The start time of the application/API
-	tracks    map[string]igc.Track // Maps the ID to a track. igc.Track.Header. UniqueID is used as the key
+	tracks    map[string]igc.Track // Maps the ID to a track. igc.Track.Header.UniqueID is used as the key
 )
 
 func init() {
@@ -82,7 +82,7 @@ func formatISO8601(t time.Duration) string {
 
 // Handles "/igcinfo/api"
 func handlerAPI(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("content-type", "application/json")
+	w.Header().Set("content-type", "application/json")
 
 	info := APIInfo{
 		Uptime:  formatISO8601(time.Since(startTime)),
@@ -95,7 +95,7 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 
 // Handles "/igcinfo/api/igc"
 func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("content-type", "application/json")
+	w.Header().Set("content-type", "application/json")
 	parts := strings.Split(r.URL.Path, "/")
 
 	// Remove "[ igcinifo api]" to make it more natural to work with "[igc]" being the start of the array
@@ -168,10 +168,10 @@ func handlerAPIID(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if len(parts) == 1 { // /<id>
-			w.Header().Add("content-type", "application/json")
+			w.Header().Set("content-type", "application/json")
 			json.NewEncoder(w).Encode(&tInfo)
 		} else { // /<id>/<field>
-			w.Header().Add("content-type", "text/plain")
+			w.Header().Set("content-type", "text/plain")
 			jsonString, _ := json.Marshal(tInfo) // Convert the TrackInfo to a json string
 
 			var trackFields map[string]interface{}   // Create a map out of the json string (the json field is the key). Map to interface to allow all types
