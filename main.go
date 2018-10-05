@@ -16,7 +16,7 @@ import (
 
 var (
 	startTime time.Time            // The start time of the application/API
-	tracks    map[string]igc.Track // Maps the ID to a track. igc.Track.Header.UniqueID is used as the key
+	tracks    map[string]igc.Track // Maps ID to its corresponding track. igc.Track.Header.UniqueID is used as the key
 )
 
 func init() {
@@ -116,13 +116,13 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 
 			url := urlMap["url"]
 			if url == "" { // If the field name from the json is wrong no element will be found
-				http.Error(w, "Invalid POST", http.StatusNotFound)
+				http.Error(w, "Invalid POST field given", http.StatusNotFound)
 				return
 			}
 
 			newTrack, err := igc.ParseLocation(url)
 			if err != nil { // If the passed URL couldn't be parsed the function aborts
-				http.Error(w, "Invalid URL", http.StatusNotFound)
+				http.Error(w, "Invalid URL given", http.StatusNotFound)
 				return
 			}
 
@@ -135,11 +135,11 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(data) // Encode the map as a JSON object
 
 		default: // Only POST and GET methods are implemented, any other type aborts
-			http.Error(w, "Not implemented", http.StatusNotImplemented)
+			http.Error(w, "Method not implemented", http.StatusNotImplemented)
 			return
 		}
 
-	case 2, 3: // 2 or 3 parts means /<id> or /<id>/<field>
+	case 2, 3: // /<id> or /<id>/<field>
 		handlerAPIID(w, r)
 
 	default: // More than 3 parts in the url (after /api/) is not implemented
@@ -155,7 +155,7 @@ func handlerAPIID(w http.ResponseWriter, r *http.Request) {
 
 	id := parts[0]
 	if track, ok := tracks[id]; ok { // The track exists
-		track.Task.Start = track.Points[0]
+		track.Task.Start = track.Points[0] // Set the points of the track
 		track.Task.Finish = track.Points[len(track.Points)-1]
 		track.Task.Turnpoints = track.Points[1 : len(track.Points)-1]
 
@@ -167,15 +167,15 @@ func handlerAPIID(w http.ResponseWriter, r *http.Request) {
 			TrackLength: track.Task.Distance(),
 		}
 
-		if len(parts) == 1 { // /<id>
+		if len(parts) == 1 { // /<id>, send back all information about the ID
 			w.Header().Set("content-type", "application/json")
 			json.NewEncoder(w).Encode(&tInfo)
-		} else { // /<id>/<field>
+		} else { // /<id>/<field>, send back only information about the given field
 			w.Header().Set("content-type", "text/plain")
-			jsonString, _ := json.Marshal(tInfo) // Convert the TrackInfo to a json string
+			jsonString, _ := json.Marshal(tInfo) // Convert the TrackInfo to a JSON string
 
-			var trackFields map[string]interface{}   // Create a map out of the json string (the json field is the key). Map to interface to allow all types
-			json.Unmarshal(jsonString, &trackFields) // Unmarshaling converts the json string to a map
+			var trackFields map[string]interface{}   // Create a map out of the JSON string (the field is the key). Map to interface to allow all types
+			json.Unmarshal(jsonString, &trackFields) // Unmarshaling the JSON string to a map
 
 			field := parts[1]
 			if res := trackFields[field]; res != nil { // If no matches were found (unknown field entered), res will be set to nil
