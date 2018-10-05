@@ -157,7 +157,7 @@ func handlerAPIID(w http.ResponseWriter, r *http.Request) {
 	if track, ok := tracks[id]; ok { // The track exists
 		track.Task.Start = track.Points[0]
 		track.Task.Finish = track.Points[len(track.Points)-1]
-		track.Task.Turnpoints = track.Points[1 : len(track.Points)-2]
+		track.Task.Turnpoints = track.Points[1 : len(track.Points)-1]
 
 		tInfo := TrackInfo{ // Copy the relevant information into a TrackInfo object
 			HDate:       track.Header.Date,
