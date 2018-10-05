@@ -29,16 +29,16 @@ func postURLToServer(t *testing.T, s *httptest.Server) *http.Response {
 }
 
 func Test_formatISO801(t *testing.T) {
-	expected := "P0Y0M1DT17H0M52S"
+	expected := "P0Y1M1DT17H0M52S"
 
 	var timeT time.Duration
-	timeT += (60 * 60 * 24) // 1 day
-	timeT += (17 * 60 * 60) // 17 hours
-	timeT += 52             // 52 seconds
-	timeT *= 1000000000
+	timeT += (30 * 60 * 60 * 24) // 1 month
+	timeT += (60 * 60 * 24)      // 1 day
+	timeT += (17 * 60 * 60)      // 17 hours
+	timeT += 52                  // 52 seconds
+	timeT *= 1000000000          // Convert from nanoseconds to seconds
 
 	actual := formatISO8601(timeT)
-
 	if actual != expected {
 		t.Error(actual, " differs from expected: ", expected)
 	}
