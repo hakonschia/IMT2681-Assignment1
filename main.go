@@ -42,6 +42,7 @@ func main() {
 		http.Error(w, "Not allowed at /igcinfo.", http.StatusNotFound)
 	})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "Port:", port)
 		http.Error(w, "Not allowed at root.", http.StatusNotFound)
 	})
 
