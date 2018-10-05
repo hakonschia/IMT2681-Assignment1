@@ -172,7 +172,7 @@ func handlerAPIID(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(&tInfo)
 		} else { // /<id>/<field>, send back only information about the given field
 			w.Header().Set("content-type", "text/plain")
-			jsonString, _ := json.Marshal(tInfo) // Convert the TrackInfo to a JSON string
+			jsonString, _ := json.Marshal(tInfo) // Convert the TrackInfo to a JSON string ([]byte)
 
 			var trackFields map[string]interface{}   // Create a map out of the JSON string (the field is the key). Map to interface to allow all types
 			json.Unmarshal(jsonString, &trackFields) // Unmarshaling the JSON string to a map
