@@ -25,7 +25,9 @@ func init() {
 	nextID = 1 // Start at 1 to avoid potential conversions from string (which returns 0 if not an int)
 }
 
-// Glider contains information about a glider, the pilot and track length
+/*
+Glider contains information about a glider, the pilot and track length
+*/
 type Glider struct {
 	HDate       string  `json:"H_date"`
 	Pilot       string  `json:"pilot"`
@@ -34,25 +36,24 @@ type Glider struct {
 	TrackLength float32 `json:"track_length"`
 }
 
-// APIInfo contains basic information about the API
+/*
+APIInfo contains basic information about the API
+*/
 type APIInfo struct {
 	Uptime  string `json:"uptime"` // TODO: Convert to string and match the ISO 8601 format
 	Info    string `json:"info"`
 	Version string `json:"version"`
 }
 
-// TrackInfo contains basic information about a track
+/*
+TrackInfo contains basic information about a track
+*/
 type TrackInfo struct {
 	HDate       time.Time `json:"H_date"`
 	Pilot       string    `json:"pilot"`
 	Glider      string    `json:"glider"`
 	GliderID    string    `json:"glider_id"`
 	TrackLength float64   `json:"track_length"`
-}
-
-// PrintFromAPIPackage s
-func PrintFromAPIPackage(w http.ResponseWriter) {
-	fmt.Fprintln(w, "Printing from api package XDDDD")
 }
 
 // FormatISO8601 formats time.Duration to a string according to the ISO8601 standard
