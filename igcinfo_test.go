@@ -36,9 +36,10 @@ func Test_formatISO801(t *testing.T) {
 	timeT += (60 * 60 * 24)      // 1 day
 	timeT += (17 * 60 * 60)      // 17 hours
 	timeT += 52                  // 52 seconds
-	timeT *= 1000000000          // Convert from nanoseconds to seconds
+	timeT *= time.Second         // Convert to seconds
 
 	actual := formatISO8601(timeT)
+
 	if actual != expected {
 		t.Error(actual, " differs from expected: ", expected)
 	}
