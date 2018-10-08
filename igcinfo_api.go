@@ -49,15 +49,20 @@ func TrackAlreadyAdded(track igc.Track) (int, bool) {
 
 // HandlerAPI handles "/igcinfo/api"
 func HandlerAPI(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("content-type", "application/json")
+	parts := RemoveEmpty(strings.Split(r.URL.Path, "/"))
+	if len(parts) == 2 {
+		w.Header().Set("content-type", "application/json")
 
-	info := APIInfo{
-		Uptime:  FormatISO8601(time.Since(startTime)),
-		Info:    "Service for IGC tracks",
-		Version: "V1",
+		info := APIInfo{
+			Uptime:  FormatISO8601(time.Since(startTime)),
+			Info:    "Service for IGC tracks",
+			Version: "V1",
+		}
+
+		json.NewEncoder(w).Encode(&info)
+	} else { // /igcinfo/api/<rubbish>
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	}
-
-	json.NewEncoder(w).Encode(&info)
 }
 
 // HandlerIGC handles "/igcinfo/api/igc"
