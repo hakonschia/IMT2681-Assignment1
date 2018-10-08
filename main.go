@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/hakonschia/igcinfo_api/api"
+	"github.com/hakonschia/igcinfo_api/igcapi"
 )
 
 //
@@ -21,13 +21,12 @@ func main() {
 
 	fmt.Println("Port is:", port)
 
-	http.HandleFunc("/igcinfo/api/igc/", api.HandlerIGC)
-	http.HandleFunc("/igcinfo/api/", api.HandlerAPI)
+	http.HandleFunc("/igcinfo/api/igc/", igcapi.HandlerIGC)
+	http.HandleFunc("/igcinfo/api/", igcapi.HandlerAPI)
 	http.HandleFunc("/igcinfo/", func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Not allowed at /igcinfo.", http.StatusNotFound)
 	})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		api.PrintFromAPIPackage(w)
 		http.Error(w, "Not allowed at root.", http.StatusNotFound)
 	})
 

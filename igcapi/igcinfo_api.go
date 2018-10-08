@@ -1,4 +1,4 @@
-package api
+package igcapi
 
 import (
 	"encoding/json"
