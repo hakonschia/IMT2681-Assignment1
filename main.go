@@ -127,7 +127,7 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 		}
 
 	case 2, 3: // /<id> or /<id>/<field>
-		handlerAPIID(w, r)
+		handlerAPIIDField(w, r)
 
 	default: // More than 3 parts in the url (after /api/) is not implemented
 		http.Error(w, "Bad Request", http.StatusBadRequest)
@@ -136,7 +136,7 @@ func handlerAPIIGC(w http.ResponseWriter, r *http.Request) {
 }
 
 // Handles /igcinfo/api/igc/<ID> and /igcinfo/api/igc/<id>/<field>
-func handlerAPIID(w http.ResponseWriter, r *http.Request) {
+func handlerAPIIDField(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.URL.Path, "/")
 	parts = removeEmpty(parts[4:])
 
