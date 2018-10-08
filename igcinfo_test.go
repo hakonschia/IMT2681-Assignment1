@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/hakonschia/igcinfo_api/igcinfo"
 )
 
 // Posts the .igc url to the server and returns the response
@@ -38,7 +40,7 @@ func Test_formatISO801(t *testing.T) {
 	timeT += 52                  // 52 seconds
 	timeT *= time.Second         // Convert to seconds
 
-	actual := formatISO8601(timeT)
+	actual := igcinfo.FormatISO8601(timeT)
 
 	if actual != expected {
 		t.Error(actual, " differs from expected: ", expected)
