@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,13 +14,15 @@ import (
 )
 
 var (
-	startTime time.Time            // The start time of the application/API
-	tracks    map[string]igc.Track // Maps ID to its corresponding track. igc.Track.Header.UniqueID is used as the key
+	startTime time.Time         // The start time of the application/API
+	tracks    map[int]igc.Track // Maps ID to its corresponding track
+	nextID    int               // The next ID to be used
 )
 
 func init() {
 	startTime = time.Now()
-	tracks = make(map[string]igc.Track)
+	tracks = make(map[int]igc.Track)
+	nextID = 1 // Start at 1 to avoid potential conversions from string (which returns 0 if not an int)
 }
 
 // RemoveEmpty removes empty strings from an array
@@ -32,6 +35,16 @@ func RemoveEmpty(arr []string) []string {
 	}
 
 	return newArr
+}
+
+// TrackAlreadyAdded checks if a track has already been added. Returns the ID if it exists
+func TrackAlreadyAdded(track igc.Track) (int, bool) {
+	for id, val := range tracks {
+		if reflect.DeepEqual(track, val) {
+			return id, true
+		}
+	}
+	return 0, false
 }
 
 // HandlerAPI handles "/igcinfo/api"
@@ -59,7 +72,10 @@ func HandlerIGC(w http.ResponseWriter, r *http.Request) {
 	case 1: // PATH: /igc/
 		switch r.Method {
 		case "GET":
-			IDs := reflect.ValueOf(tracks).MapKeys() // Get the keys of the map
+			var IDs []int
+			for key := range tracks {
+				IDs = append(IDs, key)
+			}
 			fmt.Fprintln(w, IDs)
 
 		case "POST":
@@ -76,17 +92,24 @@ func HandlerIGC(w http.ResponseWriter, r *http.Request) {
 
 			newTrack, err := igc.ParseLocation(url)
 			if err != nil { // If the passed URL couldn't be parsed the function aborts
-				http.Error(w, "Invalid URL given", http.StatusNotFound)
+				http.Error(w, fmt.Sprintf("Invalid URL given: %s", err), http.StatusNotFound)
 				return
 			}
 
-			newID := newTrack.Header.UniqueID
-			tracks[newID] = newTrack // Map the uniqueID to the track
+			if id, added := TrackAlreadyAdded(newTrack); added { // TODO: Find status code for duplicate entries
+				w.Header().Set("content-type", "text/plain")
+				fmt.Fprintf(w, "That track has already been added (id: %d)\n", id)
+			} else {
+				//newID := newTrack.Header.UniqueID
+				//tracks[newID] = newTrack // Map the uniqueID to the track
+				tracks[nextID] = newTrack
 
-			data := make(map[string]string)
-			data["id"] = newID // Map the key "id" to the newly assigned ID
+				data := make(map[string]int)
+				data["id"] = nextID // Map the key "id" to the newly assigned ID
+				nextID++
 
-			json.NewEncoder(w).Encode(data) // Encode the map as a JSON object
+				json.NewEncoder(w).Encode(data) // Encode the map as a JSON object
+			}
 
 		default: // Only POST and GET methods are implemented, any other type aborts
 			http.Error(w, "Method not implemented", http.StatusNotImplemented)
@@ -107,7 +130,12 @@ func HandlerIDField(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.URL.Path, "/")
 	parts = RemoveEmpty(parts[4:])
 
-	id := parts[0]
+	id, err := strconv.Atoi(parts[0])
+	if err != nil { // Not an integer given
+		http.Error(w, "Invalid ID type given", http.StatusBadRequest)
+		return
+	}
+
 	if track, ok := tracks[id]; ok { // The track exists
 		track.Task.Start = track.Points[0] // Set the points of the track
 		track.Task.Finish = track.Points[len(track.Points)-1]
@@ -135,10 +163,10 @@ func HandlerIDField(w http.ResponseWriter, r *http.Request) {
 			if res := trackFields[field]; res != nil { // If no matches were found (unknown field entered), res will be set to nil
 				fmt.Fprintln(w, res)
 			} else {
-				http.Error(w, "Invalid field given", http.StatusBadRequest)
+				http.Error(w, "Invalid field given", http.StatusNotFound)
 			}
 		}
 	} else { // ID/track was not found
-		http.Error(w, "Invalid ID given", http.StatusBadRequest)
+		http.Error(w, "Invalid ID given", http.StatusNotFound)
 	}
 }
