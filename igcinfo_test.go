@@ -60,26 +60,6 @@ func Test_removeEmpty(t *testing.T) {
 	}
 }
 
-// Tests that the same track cannot be added two times
-func Test_trackAlreadyAdded(t *testing.T) {
-	testServer := httptest.NewServer(http.HandlerFunc(HandlerIGC))
-	defer testServer.Close()
-
-	// Post a url to the server
-
-	_ = postURLToServer(t, testServer)         // The response of the first post isn't needed
-	response := postURLToServer(t, testServer) // Add it again, should give an error response back
-
-	resp, _ := ioutil.ReadAll(response.Body)
-
-	respStr := string(resp) // Convert the response to a string and remove the newline at the en
-	respStr = respStr[:len(respStr)-1]
-
-	if respStr != "That track has already been added (id: 1)" {
-		fmt.Printf("Unexpected response: %s", string(resp))
-	}
-}
-
 // Tests that /igcinfo/api/ responds with information about the API
 func Test_handlerAPI_generic(t *testing.T) {
 	testServer := httptest.NewServer(http.HandlerFunc(HandlerAPI))
@@ -211,5 +191,25 @@ func Test_handlerIGC_ID_Field(t *testing.T) {
 		if expected[i] != actual {
 			t.Errorf("Expected '%s' differs from actual '%s'", expected[i], actual)
 		}
+	}
+}
+
+// Tests that the same track cannot be added two times
+func Test_trackAlreadyAdded(t *testing.T) {
+	testServer := httptest.NewServer(http.HandlerFunc(HandlerIGC))
+	defer testServer.Close()
+
+	// Post a url to the server
+
+	_ = postURLToServer(t, testServer)         // The response of the first post isn't needed
+	response := postURLToServer(t, testServer) // Add it again, should give an error response back
+
+	resp, _ := ioutil.ReadAll(response.Body)
+
+	respStr := string(resp) // Convert the response to a string and remove the newline at the en
+	respStr = respStr[:len(respStr)-1]
+
+	if respStr != "That track has already been added (id: 1)" {
+		fmt.Printf("Unexpected response: %s", string(resp))
 	}
 }
