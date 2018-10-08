@@ -111,7 +111,7 @@ func HandlerIGC(w http.ResponseWriter, r *http.Request) {
 	case 1: // PATH: /igc/
 		switch r.Method {
 		case "GET":
-			var IDs []int
+			IDs := []int{}
 			for key := range tracks {
 				IDs = append(IDs, key)
 			}
