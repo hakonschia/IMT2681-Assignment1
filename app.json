@@ -1,10 +1,10 @@
 {
-  "name": "Assignment 1 in IMT2681 - Cancer Technologies",
-  "description": "Cancer",
+  "name": "Assignment 1 in IMT2681 - Cloud Technologies",
+  "description": "Cloud",
   "keywords": [
-    "cancer",
-    "tumors"
+    "Cloud",
+    "Technologies"
   ],
-  "website": "https://github.com/hakonschia/IMT2681-Assignment1",
-  "repository": "https://github.com/hakonschia/IMT2681-Assignment1"
+  "website": "https://github.com/hakonschia/igcinfo_api",
+  "repository": "https://github.com/hakonschia/igcinfo_api"
 }

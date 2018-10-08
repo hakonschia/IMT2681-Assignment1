@@ -5,8 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-
-	"github.com/hakonschia/igcinfo_api/igcinfo"
 )
 
 //
@@ -21,8 +19,8 @@ func main() {
 
 	fmt.Println("Port is:", port)
 
-	http.HandleFunc("/igcinfo/api/igc/", igcinfo.HandlerIGC)
-	http.HandleFunc("/igcinfo/api/", igcinfo.HandlerAPI)
+	http.HandleFunc("/igcinfo/api/igc/", HandlerIGC)
+	http.HandleFunc("/igcinfo/api/", HandlerAPI)
 	http.HandleFunc("/igcinfo/", func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Not allowed at /igcinfo.", http.StatusNotFound)
 	})

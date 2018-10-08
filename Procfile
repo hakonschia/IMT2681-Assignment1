@@ -1,1 +1,1 @@
-web: IMT2681-Assignment1
+web: igcinfo_api
