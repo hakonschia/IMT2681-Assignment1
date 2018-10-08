@@ -115,7 +115,7 @@ func HandlerIGC(w http.ResponseWriter, r *http.Request) {
 			for key := range tracks {
 				IDs = append(IDs, key)
 			}
-			fmt.Fprintln(w, IDs)
+			json.NewEncoder(w).Encode(IDs)
 
 		case "POST":
 			bodyStr, _ := ioutil.ReadAll(r.Body) // Read the entire body (SHOULD be of form {"url": <url>})
