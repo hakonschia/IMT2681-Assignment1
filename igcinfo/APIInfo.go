@@ -1,4 +1,4 @@
-package igcinfoapi
+package igcinfo
 
 // APIInfo contains basic information about the API
 type APIInfo struct {

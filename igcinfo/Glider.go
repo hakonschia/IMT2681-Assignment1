@@ -1,4 +1,4 @@
-package igcinfoapi
+package igcinfo
 
 // Glider is a container with information about a glider, the pilot and track length
 type Glider struct {

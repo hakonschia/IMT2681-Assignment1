@@ -1,4 +1,4 @@
-package igcinfoapi
+package igcinfo
 
 import "time"
 

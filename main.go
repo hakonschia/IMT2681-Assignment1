@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hakonschia/igcinfo/igcinfoapi"
+	"github.com/hakonschia/igcinfo_api/igcinfo"
 	igc "github.com/marni/goigc"
 )
 
@@ -34,12 +34,6 @@ func main() {
 	if !portOk {
 		port = "8080" // 8080 is used as the default port
 	}
-
-	v := igcinfoapi.TrackInfo{
-		Pilot: "Kuk",
-	}
-
-	fmt.Println(v)
 
 	fmt.Println("Port is:", port)
 
@@ -91,7 +85,7 @@ func formatISO8601(t time.Duration) string {
 func handlerAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json")
 
-	info := igcinfoapi.APIInfo{
+	info := igcinfo.APIInfo{
 		Uptime:  formatISO8601(time.Since(startTime)),
 		Info:    "Service for IGC tracks",
 		Version: "V1",
@@ -166,7 +160,7 @@ func handlerAPIID(w http.ResponseWriter, r *http.Request) {
 		track.Task.Finish = track.Points[len(track.Points)-1]
 		track.Task.Turnpoints = track.Points[1 : len(track.Points)-1]
 
-		tInfo := igcinfoapi.TrackInfo{ // Copy the relevant information into a TrackInfo object
+		tInfo := igcinfo.TrackInfo{ // Copy the relevant information into a TrackInfo object
 			HDate:       track.Header.Date,
 			Pilot:       track.Header.Pilot,
 			GliderID:    track.Header.GliderID,
