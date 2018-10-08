@@ -50,6 +50,11 @@ type TrackInfo struct {
 	TrackLength float64   `json:"track_length"`
 }
 
+// PrintFromAPIPackage s
+func PrintFromAPIPackage(w http.ResponseWriter) {
+	fmt.Fprintln(w, "Printing from api package XDDDD")
+}
+
 // FormatISO8601 formats time.Duration to a string according to the ISO8601 standard
 func FormatISO8601(t time.Duration) string {
 	seconds := int64(t.Seconds()) % 60 // These functions return the total time for each field (e.g 200 seconds)

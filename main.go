@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/hakonschia/igcinfo_api/api"
-	"github.com/hakonschia/igcinfo_api/packagetest"
 )
 
 //
@@ -28,7 +27,7 @@ func main() {
 		http.Error(w, "Not allowed at /igcinfo.", http.StatusNotFound)
 	})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		packagetest.PrintHello(w)
+		api.PrintFromAPIPackage(w)
 		http.Error(w, "Not allowed at root.", http.StatusNotFound)
 	})
 
