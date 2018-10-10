@@ -29,7 +29,7 @@ func init() {
 APIInfo contains basic information about the API
 */
 type APIInfo struct {
-	Uptime  string `json:"uptime"` // TODO: Convert to string and match the ISO 8601 format
+	Uptime  string `json:"uptime"`
 	Info    string `json:"info"`
 	Version string `json:"version"`
 }
@@ -110,14 +110,14 @@ func HandlerIGC(w http.ResponseWriter, r *http.Request) {
 	switch len(parts) {
 	case 1: // PATH: /igc/
 		switch r.Method {
-		case "GET":
+		case "GET": // Return all the IDs in use
 			IDs := []int{}
 			for key := range tracks {
 				IDs = append(IDs, key)
 			}
 			json.NewEncoder(w).Encode(IDs)
 
-		case "POST":
+		case "POST": // Add a new track, return its ID
 			bodyStr, _ := ioutil.ReadAll(r.Body) // Read the entire body (SHOULD be of form {"url": <url>})
 
 			urlMap := make(map[string]string) // Convert the JSON string to a map
@@ -139,12 +139,10 @@ func HandlerIGC(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("content-type", "text/plain")
 				fmt.Fprintf(w, "That track has already been added (id: %d)\n", id)
 			} else {
-				//newID := newTrack.Header.UniqueID
-				//tracks[newID] = newTrack // Map the uniqueID to the track
 				tracks[nextID] = newTrack
 
-				data := make(map[string]int)
-				data["id"] = nextID // Map the key "id" to the newly assigned ID
+				data := make(map[string]int) // A map for the JSON response
+				data["id"] = nextID
 				nextID++
 
 				json.NewEncoder(w).Encode(data) // Encode the map as a JSON object
@@ -175,10 +173,15 @@ func HandlerIDField(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// By using a map instead of slice/array for the tracks, it's very easy to check if it exists
+	// since you can get a boolean value back as well as the object from a map (or check if val != nil)
+	// Although not implemented here, this is very handy for deleting tracks, without having to
+	// keeping track of all the IDs which are deleted
+
 	if track, ok := tracks[id]; ok { // The track exists
 		track.Task.Start = track.Points[0] // Set the points of the track
 		track.Task.Finish = track.Points[len(track.Points)-1]
-		track.Task.Turnpoints = track.Points[1 : len(track.Points)-1]
+		track.Task.Turnpoints = track.Points[1 : len(track.Points)-1] // [from, including : to, not including]
 
 		tInfo := TrackInfo{ // Copy the relevant information into a TrackInfo object
 			HDate:       track.Header.Date,
@@ -199,7 +202,7 @@ func HandlerIDField(w http.ResponseWriter, r *http.Request) {
 			json.Unmarshal(jsonString, &trackFields) // Unmarshaling the JSON string to a map
 
 			field := parts[1]
-			if res := trackFields[field]; res != nil { // If no matches were found (unknown field entered), res will be set to nil
+			if res, found := trackFields[field]; found {
 				fmt.Fprintln(w, res)
 			} else {
 				http.Error(w, "Invalid field given", http.StatusNotFound)
