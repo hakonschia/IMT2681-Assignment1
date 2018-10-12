@@ -56,13 +56,13 @@ func Test_handlerAPI_info(t *testing.T) {
 
 	// Compare the keys
 	if keys[0].Interface() != "uptime" { // Convert reflect.Value to interface to compare to string
-		t.Errorf("Key 0 expected to be '%s', but it is '%s'.", "uptime", keys[0])
+		t.Errorf("Key 0 expected to be '%s', got '%s'.", "uptime", keys[0])
 	}
 	if keys[1].Interface() != "info" {
-		t.Errorf("Key 0 expected to be '%s', but it is '%s'.", "info", keys[0])
+		t.Errorf("Key 0 expected to be '%s', got '%s'.", "info", keys[0])
 	}
 	if keys[2].Interface() != "version" {
-		t.Errorf("Key 0 expected to be '%s', but it is '%s'.", "version", keys[0])
+		t.Errorf("Key 0 expected to be '%s', got '%s'.", "version", keys[0])
 	}
 
 	// Compare the values
