@@ -14,19 +14,24 @@ import (
 
 // HandlerAPI handles "/igcinfo/api"
 func HandlerAPI(w http.ResponseWriter, r *http.Request) {
-	parts := RemoveEmpty(strings.Split(r.URL.Path, "/"))
-	if len(parts) == 2 {
-		w.Header().Set("content-type", "application/json")
+	switch r.Method {
+	case "GET":
+		parts := RemoveEmpty(strings.Split(r.URL.Path, "/"))
+		if len(parts) == 2 {
+			w.Header().Set("content-type", "application/json")
 
-		info := APIInfo{
-			Uptime:  FormatISO8601(time.Since(startTime)),
-			Info:    "Service for IGC tracks",
-			Version: "V1",
+			info := APIInfo{
+				Uptime:  FormatISO8601(time.Since(startTime)),
+				Info:    "Service for IGC tracks",
+				Version: "V1",
+			}
+
+			json.NewEncoder(w).Encode(&info)
+		} else { // /igcinfo/api/<rubbish>
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		}
-
-		json.NewEncoder(w).Encode(&info)
-	} else { // /igcinfo/api/<rubbish>
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	default:
+		http.Error(w, "Method not implemented", http.StatusNotImplemented)
 	}
 }
 
@@ -98,48 +103,53 @@ func HandlerIDField(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.URL.Path, "/")
 	parts = RemoveEmpty(parts[4:])
 
-	id, err := strconv.Atoi(parts[0])
-	if err != nil { // Not an integer given
-		http.Error(w, "Invalid ID type given", http.StatusBadRequest)
-		return
-	}
-
-	// By using a map instead of slice/array for the tracks, it's very easy to check if it exists
-	// since you can get a boolean value back as well as the object from a map (or check if val != nil)
-	// Although not implemented here, this is very handy for deleting tracks, without having to
-	// keeping track of all the IDs which are deleted
-
-	if track, ok := tracks[id]; ok { // The track exists
-		track.Task.Start = track.Points[0] // Set the points of the track
-		track.Task.Finish = track.Points[len(track.Points)-1]
-		track.Task.Turnpoints = track.Points[1 : len(track.Points)-1] // [from, including : to, not including]
-
-		tInfo := TrackInfo{ // Copy the relevant information into a TrackInfo object
-			HDate:       track.Header.Date,
-			Pilot:       track.Header.Pilot,
-			GliderID:    track.Header.GliderID,
-			Glider:      track.Header.GliderType,
-			TrackLength: track.Task.Distance(),
+	switch r.Method {
+	case "GET":
+		id, err := strconv.Atoi(parts[0])
+		if err != nil { // Not an integer given
+			http.Error(w, "Invalid ID type given", http.StatusBadRequest)
+			return
 		}
 
-		if len(parts) == 1 { // /<id>, send back all information about the ID
-			w.Header().Set("content-type", "application/json")
-			json.NewEncoder(w).Encode(&tInfo)
-		} else { // /<id>/<field>, send back only information about the given field
-			w.Header().Set("content-type", "text/plain")
-			jsonString, _ := json.Marshal(tInfo) // Convert the TrackInfo to a JSON string ([]byte)
+		// By using a map instead of slice/array for the tracks, it's very easy to check if it exists
+		// since you can get a boolean value back as well as the object from a map (or check if val != nil)
+		// Although not implemented here, this is very handy for deleting tracks, without having to
+		// keeping track of all the IDs which are deleted
 
-			var trackFields map[string]interface{}   // Create a map out of the JSON string (the field is the key). Map to interface to allow all types
-			json.Unmarshal(jsonString, &trackFields) // Unmarshaling the JSON string to a map
+		if track, ok := tracks[id]; ok { // The track exists
+			track.Task.Start = track.Points[0] // Set the points of the track
+			track.Task.Finish = track.Points[len(track.Points)-1]
+			track.Task.Turnpoints = track.Points[1 : len(track.Points)-1] // [from, including : to, not including]
 
-			field := parts[1]
-			if res, found := trackFields[field]; found {
-				fmt.Fprintln(w, res)
-			} else {
-				http.Error(w, "Invalid field given", http.StatusNotFound)
+			tInfo := TrackInfo{ // Copy the relevant information into a TrackInfo object
+				HDate:       track.Header.Date,
+				Pilot:       track.Header.Pilot,
+				GliderID:    track.Header.GliderID,
+				Glider:      track.Header.GliderType,
+				TrackLength: track.Task.Distance(),
 			}
+
+			if len(parts) == 1 { // /<id>, send back all information about the ID
+				w.Header().Set("content-type", "application/json")
+				json.NewEncoder(w).Encode(&tInfo)
+			} else { // /<id>/<field>, send back only information about the given field
+				w.Header().Set("content-type", "text/plain")
+				jsonString, _ := json.Marshal(tInfo) // Convert the TrackInfo to a JSON string ([]byte)
+
+				var trackFields map[string]interface{}   // Create a map out of the JSON string (the field is the key). Map to interface to allow all types
+				json.Unmarshal(jsonString, &trackFields) // Unmarshaling the JSON string to a map
+
+				field := parts[1]
+				if res, found := trackFields[field]; found {
+					fmt.Fprintln(w, res)
+				} else {
+					http.Error(w, "Invalid field given", http.StatusNotFound)
+				}
+			}
+		} else { // ID/track was not found
+			http.Error(w, "Invalid ID given", http.StatusNotFound)
 		}
-	} else { // ID/track was not found
-		http.Error(w, "Invalid ID given", http.StatusNotFound)
+	default:
+		http.Error(w, "Method not implemented", http.StatusNotImplemented)
 	}
 }
