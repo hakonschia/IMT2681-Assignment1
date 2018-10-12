@@ -6,6 +6,7 @@ package igcapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -50,7 +51,32 @@ func Test_handlerAPI_info(t *testing.T) {
 	keys := reflect.ValueOf(res).MapKeys()
 	if len(keys) != 3 {
 		t.Errorf("There are %d keys in the map, should be 3.", len(keys))
+		return
 	}
+
+	// Compare the keys
+	if keys[0].Interface() != "uptime" { // Convert reflect.Value to interface to compare to string
+		t.Errorf("Key 0 expected to be '%s', but it is '%s'.", "uptime", keys[0])
+	}
+	if keys[1].Interface() != "info" {
+		t.Errorf("Key 0 expected to be '%s', but it is '%s'.", "info", keys[0])
+	}
+	if keys[2].Interface() != "version" {
+		t.Errorf("Key 0 expected to be '%s', but it is '%s'.", "version", keys[0])
+	}
+
+	// Compare the values
+	if res["uptime"] != "P0Y0M0DT0H0M0S" {
+		t.Errorf("Uptime expected to be '%s', got '%s'", "P0Y0M0DT0H0M0S", res["uptime"])
+	}
+	if res["info"] != "Service for IGC tracks" {
+		t.Errorf("Info expected to be '%s', got '%s'", "V1", res["info"])
+	}
+	if res["version"] != "V1" {
+		t.Errorf("Version expected to be '%s', got '%s'", "V!", res["version"])
+	}
+
+	fmt.Println(res)
 }
 
 // Tests that posting to the server returns the correct response (the ID)
