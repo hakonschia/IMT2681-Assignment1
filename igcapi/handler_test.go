@@ -6,7 +6,6 @@ package igcapi
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -75,8 +74,6 @@ func Test_handlerAPI_info(t *testing.T) {
 	if res["version"] != "V1" {
 		t.Errorf("Version expected to be '%s', got '%s'", "V!", res["version"])
 	}
-
-	fmt.Println(res)
 }
 
 // Tests that posting to the server returns the correct response (the ID)

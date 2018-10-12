@@ -34,14 +34,15 @@ func Test_trackAlreadyAdded(t *testing.T) {
 
 // Tests that a duration gets formatted correctly
 func Test_formatISO801(t *testing.T) {
-	expected := "P0Y1M1DT17H0M52S"
+	expected := "P1Y4M14DT17H0M52S"
 
 	var timeT time.Duration
-	timeT += (30 * 60 * 60 * 24) // 1 month
-	timeT += (60 * 60 * 24)      // 1 day
-	timeT += (17 * 60 * 60)      // 17 hours
-	timeT += 52                  // 52 seconds
-	timeT *= time.Second         // Convert to seconds
+	timeT += (12 * 30 * 60 * 60 * 24) // 1 year
+	timeT += (4 * 30 * 60 * 60 * 24)  // 4 months
+	timeT += (14 * 60 * 60 * 24)      // 1 day
+	timeT += (17 * 60 * 60)           // 17 hours
+	timeT += 52                       // 52 seconds
+	timeT *= time.Second              // Convert to seconds
 
 	actual := FormatISO8601(timeT)
 
