@@ -33,7 +33,7 @@ func PostURLToServer(t *testing.T, s *httptest.Server) *http.Response {
 }
 
 // Tests that /igcinfo/api/ responds with information about the API
-func Test_handlerAPI_generic(t *testing.T) {
+func Test_handlerAPI_info(t *testing.T) {
 	testServer := httptest.NewServer(http.HandlerFunc(HandlerAPI))
 	defer testServer.Close()
 
@@ -53,7 +53,7 @@ func Test_handlerAPI_generic(t *testing.T) {
 	}
 }
 
-// Tests that posting
+// Tests that posting to the server returns the correct response (the ID)
 func Test_handlerIGC_POST(t *testing.T) {
 	testServer := httptest.NewServer(http.HandlerFunc(HandlerIGC))
 	defer testServer.Close()
@@ -70,6 +70,7 @@ func Test_handlerIGC_POST(t *testing.T) {
 	}
 }
 
+// Tests that /igcinfo/api/igc/ returns an empty array before anything is posted
 func Test_handlerIGC_empty(t *testing.T) {
 	testServer := httptest.NewServer(http.HandlerFunc(HandlerIGC))
 	defer testServer.Close()
@@ -89,6 +90,7 @@ func Test_handlerIGC_empty(t *testing.T) {
 	}
 }
 
+// Tests that /igcinfo/api/igc/<ID> returns the correct information about the track with ID 1
 func Test_handlerIGC_ID(t *testing.T) {
 	testServer := httptest.NewServer(http.HandlerFunc(HandlerIGC))
 	defer testServer.Close()
@@ -120,7 +122,6 @@ func Test_handlerIGC_ID(t *testing.T) {
 			t.Errorf("Expected %s differs from actual %v", expected[key], actual[key])
 		}
 	}
-
 }
 
 // Checks that all the fields match after posted to the server
@@ -132,25 +133,27 @@ func Test_handlerIGC_ID_Field(t *testing.T) {
 
 	_ = PostURLToServer(t, testServer) // The response from POST is not needed for this test
 
-	url += "1/"
+	url += "1/" // Check ID 1
 
-	var keys [5]string
-	keys[0] = "H_date"
-	keys[1] = "pilot"
-	keys[2] = "glider"
-	keys[3] = "glider_id"
-	keys[4] = "track_length"
+	expectedKeys := [5]string{
+		"H_date",
+		"pilot",
+		"glider",
+		"glider_id",
+		"track_length",
+	}
 
-	var expected [5]string
-	expected[0] = "2016-02-19T00:00:00Z"
-	expected[1] = "Miguel Angel Gordillo"
-	expected[2] = "RV8"
-	expected[3] = "EC-XLL"
-	expected[4] = "443.2573603705269"
+	expectedValues := [5]string{
+		"2016-02-19T00:00:00Z",
+		"Miguel Angel Gordillo",
+		"RV8",
+		"EC-XLL",
+		"443.2573603705269",
+	}
 
 	baseURL := url
-	for i := 0; i < len(keys); i++ {
-		url := baseURL + keys[i] + "/"
+	for i := 0; i < 5; i++ {
+		url := baseURL + expectedKeys[i] + "/" // Add the field to the URL (/igcinfo/api/igc/1/pilot etc.)
 
 		response, err := http.Get(url)
 		if err != nil {
@@ -160,8 +163,8 @@ func Test_handlerIGC_ID_Field(t *testing.T) {
 		actual := string(respBody)                   // Convert to a string
 		actual = actual[:len(actual)-1]              // Remove the last character of the string (a newline is read as well)
 
-		if expected[i] != actual {
-			t.Errorf("Expected '%s' differs from actual '%s'", expected[i], actual)
+		if expectedValues[i] != actual {
+			t.Errorf("Expected '%s' differs from actual '%s'", expectedValues[i], actual)
 		}
 	}
 }
