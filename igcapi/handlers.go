@@ -31,7 +31,7 @@ func HandlerAPI(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		}
 	default:
-		http.Error(w, "Method not implemented", http.StatusNotImplemented)
+		http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
 	}
 }
 
@@ -85,7 +85,7 @@ func HandlerIGC(w http.ResponseWriter, r *http.Request) {
 			}
 
 		default: // Only POST and GET methods are implemented, any other type aborts
-			http.Error(w, "Method not implemented", http.StatusNotImplemented)
+			http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
 			return
 		}
 
@@ -93,7 +93,7 @@ func HandlerIGC(w http.ResponseWriter, r *http.Request) {
 		HandlerIDField(w, r)
 
 	default: // More than 3 parts in the url (after /api/) is not implemented
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 }
@@ -131,7 +131,7 @@ func HandlerIDField(w http.ResponseWriter, r *http.Request) {
 
 			if len(parts) == 1 { // /<id>, send back all information about the ID
 				w.Header().Set("content-type", "application/json")
-				json.NewEncoder(w).Encode(&tInfo)
+				json.NewEncoder(w).Encode(tInfo)
 			} else { // /<id>/<field>, send back only information about the given field
 				w.Header().Set("content-type", "text/plain")
 				jsonString, _ := json.Marshal(tInfo) // Convert the TrackInfo to a JSON string ([]byte)
@@ -150,6 +150,6 @@ func HandlerIDField(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Invalid ID given", http.StatusNotFound)
 		}
 	default:
-		http.Error(w, "Method not implemented", http.StatusNotImplemented)
+		http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
 	}
 }
