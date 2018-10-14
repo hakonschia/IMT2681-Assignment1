@@ -28,5 +28,5 @@ Done by Håkon Schia (haakosc, 480631).
 
 **GET**: Returns the relevant field for the given ID. The valid fields are: H_date, pilot, glider, glider_id, track_length.
 
-# Heroku link
-https://warm-taiga-87322.herokuapp.com/
+# Heroku
+Deployed on Heroku under the URL: https://warm-taiga-87322.herokuapp.com/
