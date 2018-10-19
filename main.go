@@ -20,7 +20,7 @@ func main() {
 	}
 
 	fmt.Println("Port is:", port)
-
+	fmt.Println("Testing branch:)")
 	http.HandleFunc("/igcinfo/api/igc/", igcapi.HandlerIGC)
 	http.HandleFunc("/igcinfo/api/", igcapi.HandlerAPI)
 	http.HandleFunc("/igcinfo/", func(w http.ResponseWriter, r *http.Request) {
