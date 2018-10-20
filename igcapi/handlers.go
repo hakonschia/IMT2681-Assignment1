@@ -12,7 +12,7 @@ import (
 	igc "github.com/marni/goigc"
 )
 
-// HandlerAPI handles "/igcinfo/api"
+// HandlerAPI handles "/paragliding/api"
 func HandlerAPI(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
@@ -27,7 +27,7 @@ func HandlerAPI(w http.ResponseWriter, r *http.Request) {
 			}
 
 			json.NewEncoder(w).Encode(&info)
-		} else { // /igcinfo/api/<rubbish>
+		} else { // /paragliding/api/<rubbish>
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		}
 	default:
@@ -35,16 +35,16 @@ func HandlerAPI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// HandlerIGC handles "/igcinfo/api/igc"
-func HandlerIGC(w http.ResponseWriter, r *http.Request) {
+// HandlerTrack handles "/paragliding/api/track"
+func HandlerTrack(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json")
 	parts := strings.Split(r.URL.Path, "/")
 
-	// Remove "[ igcinifo api]" to make it more natural to work with "[igc]" being the start of the array
-	parts = RemoveEmpty(parts[3:]) // Remove the empty strings, this makes it so "/igc/" and "/igc" is treated as the same
+	// Remove "[ paragliding api]" to make it more natural to work with "[igc]" being the start of the array
+	parts = RemoveEmpty(parts[3:]) // Remove the empty strings, this makes it so "/track/" and "/track" is treated as the same
 
 	switch len(parts) {
-	case 1: // PATH: /igc/
+	case 1: // PATH: /track/
 		switch r.Method {
 		case "GET": // Return all the IDs in use
 			IDs := []int{}
@@ -67,7 +67,7 @@ func HandlerIGC(w http.ResponseWriter, r *http.Request) {
 
 			newTrack, err := igc.ParseLocation(url)
 			if err != nil { // If the passed URL couldn't be parsed the function aborts
-				http.Error(w, fmt.Sprintf("Invalid URL given: %s", err), http.StatusNotFound)
+				http.Error(w, fmt.Sprintf("Bad Request: Invalid URL given: %s", err), http.StatusBadRequest)
 				return
 			}
 
@@ -90,7 +90,7 @@ func HandlerIGC(w http.ResponseWriter, r *http.Request) {
 		}
 
 	case 2, 3: // PATH: /<id> or /<id>/<field>
-		HandlerIDField(w, r)
+		HandlerTrackFieldID(w, r)
 
 	default: // More than 3 parts in the url (after /api/) is not implemented
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -98,8 +98,8 @@ func HandlerIGC(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// HandlerIDField handles /igcinfo/api/igc/<ID> and /igcinfo/api/igc/<id>/<field>
-func HandlerIDField(w http.ResponseWriter, r *http.Request) {
+// HandlerTrackFieldID handles /paragliding/api/track/<ID> and /paragliding/api/track/<id>/<field>
+func HandlerTrackFieldID(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.URL.Path, "/")
 	parts = RemoveEmpty(parts[4:])
 
@@ -152,4 +152,14 @@ func HandlerIDField(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
 	}
+}
+
+// HandlerTicker handles /paragliding/api/ticker/
+func HandlerTicker(w http.ResponseWriter, r *http.Request) {
+
+}
+
+// HandlerTickerLatest handles /paragliding/api/ticker/latest/
+func HandlerTickerLatest(w http.ResponseWriter, r *http.Request) {
+
 }
