@@ -8,16 +8,16 @@ import (
 )
 
 /*
-TrackMongoDB stores information used to connect to the DB
+TrackDB stores information used to connect to the DB
 */
-type TrackMongoDB struct {
+type TrackDB struct {
 	DatabaseURL         string `json:"databaseurl"`
 	DatabaseName        string `json:"databasename"`
 	TrackCollectionName string `json:"trackcollectionname"`
 }
 
 // Init initializes the mongo database
-func (db *TrackMongoDB) Init() {
+func (db *TrackDB) Init() {
 	session, err := mgo.Dial(db.DatabaseURL)
 	if err != nil {
 		panic(err)
@@ -41,7 +41,7 @@ func (db *TrackMongoDB) Init() {
 /*
 Add adds a new track to the database, returns if the adding was successful
 */
-func (db *TrackMongoDB) Add(t Track) bool {
+func (db *TrackDB) Add(t Track) bool {
 	session, err := mgo.Dial(db.DatabaseURL)
 	if err != nil {
 		panic(err)
@@ -50,7 +50,7 @@ func (db *TrackMongoDB) Add(t Track) bool {
 
 	err = session.DB(db.DatabaseName).C(db.TrackCollectionName).Insert(t)
 	if err != nil {
-		fmt.Errorf("Error inserting track into the DB: %s", err.Error())
+		fmt.Printf("Error inserting track into the DB: %s", err.Error())
 		return false
 	}
 
@@ -60,7 +60,7 @@ func (db *TrackMongoDB) Add(t Track) bool {
 /*
 Count returns the amount of tracks in the database
 */
-func (db *TrackMongoDB) Count() int {
+func (db *TrackDB) Count() int {
 	session, err := mgo.Dial(db.DatabaseURL)
 	if err != nil {
 		panic(err)
@@ -69,7 +69,7 @@ func (db *TrackMongoDB) Count() int {
 
 	count, err := session.DB(db.DatabaseName).C(db.TrackCollectionName).Count()
 	if err != nil {
-		fmt.Errorf("Error retrieving the count from the database: %s", err.Error())
+		fmt.Printf("Error retrieving the count from the database: %s", err.Error())
 		return -1
 	}
 
@@ -79,7 +79,7 @@ func (db *TrackMongoDB) Count() int {
 /*
 Get returns the track with a given ID, and if the track was found
 */
-func (db *TrackMongoDB) Get(key int) (Track, bool) {
+func (db *TrackDB) Get(key int) (Track, bool) {
 	session, err := mgo.Dial(db.DatabaseURL)
 	if err != nil {
 		panic(err)
@@ -95,4 +95,60 @@ func (db *TrackMongoDB) Get(key int) (Track, bool) {
 	}
 
 	return t, trackFound
+}
+
+// GetAll returns all the tracks in the database, or a potential error
+func (db *TrackDB) GetAll() ([]Track, error) {
+	session, err := mgo.Dial(db.DatabaseURL)
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+
+	tracks := []Track{}
+
+	err = session.DB(db.DatabaseName).C(db.TrackCollectionName).Find(bson.M{}).All(&tracks)
+	if err != nil {
+		return []Track{}, err
+	}
+
+	return tracks, nil
+}
+
+// GetAllIDs returns a slice of all the IDs used in the DB
+func (db *TrackDB) GetAllIDs() ([]int, error) {
+	session, err := mgo.Dial(db.DatabaseURL)
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+
+	var tracks []Track
+
+	err = session.DB(db.DatabaseName).C(db.TrackCollectionName).Find(nil).All(&tracks)
+	if err != nil {
+		return []int{}, nil
+	}
+
+	IDs := []int{}
+	for _, val := range tracks {
+		IDs = append(IDs, val.TrackID)
+	}
+
+	return IDs, nil
+}
+
+// GetLastID returns the last used track ID
+func (db *TrackDB) GetLastID() int {
+	session, err := mgo.Dial(db.DatabaseURL)
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+
+	var track Track
+	// MongoDB sorts based on insertion time, so the last element can be found via the number of elements
+	err = session.DB(db.DatabaseName).C(db.TrackCollectionName).Find(bson.M{"trackid": db.Count() - 1}).One(&track)
+	fmt.Println("NextID:", track.TrackID)
+	return track.TrackID
 }

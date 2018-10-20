@@ -12,6 +12,23 @@ import (
 	igc "github.com/marni/goigc"
 )
 
+const (
+	dbURL = "mongodb://" + dbUser + ":" + dbPassword + "@ds125502.mlab.com:25502/paragliding" // The URL used to connect to the database
+)
+
+var (
+	db TrackDB
+)
+
+func init() {
+	db = TrackDB{
+		DatabaseURL:         dbURL,
+		DatabaseName:        "paragliding",
+		TrackCollectionName: "tracks",
+	}
+	db.Init()
+}
+
 // HandlerAPI handles "/paragliding/api"
 func HandlerAPI(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -47,10 +64,7 @@ func HandlerTrack(w http.ResponseWriter, r *http.Request) {
 	case 1: // PATH: /track/
 		switch r.Method {
 		case "GET": // Return all the IDs in use
-			IDs := []int{}
-			for key := range tracks {
-				IDs = append(IDs, key)
-			}
+			IDs, _ := db.GetAllIDs()
 			json.NewEncoder(w).Encode(IDs)
 
 		case "POST": // Add a new track, return its ID
@@ -65,23 +79,27 @@ func HandlerTrack(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			newTrack, err := igc.ParseLocation(url)
+			parsedTrack, err := igc.ParseLocation(url)
 			if err != nil { // If the passed URL couldn't be parsed the function aborts
 				http.Error(w, fmt.Sprintf("Bad Request: Invalid URL given: %s", err), http.StatusBadRequest)
 				return
 			}
 
-			if id, added := TrackAlreadyAdded(newTrack); added { // TODO: Find status code for duplicate entries
-				w.Header().Set("content-type", "text/plain")
-				fmt.Fprintf(w, "That track has already been added (id: %d)\n", id)
-			} else {
-				tracks[nextID] = newTrack
+			t := Track{
+				TrackID:        nextID,
+				TrackSourceURL: url,
+				Track:          parsedTrack,
+			}
 
+			if db.Add(t) {
 				data := make(map[string]int) // A map for the JSON response
 				data["id"] = nextID
 				nextID++
 
 				json.NewEncoder(w).Encode(data) // Encode the map as a JSON object
+			} else {
+				w.Header().Set("content-type", "text/plain")
+				fmt.Fprintln(w, "Couldn't add the track")
 			}
 
 		default: // Only POST and GET methods are implemented, any other type aborts
@@ -111,44 +129,34 @@ func HandlerTrackFieldID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// By using a map instead of slice/array for the tracks, it's very easy to check if it exists
-		// since you can get a boolean value back as well as the object from a map (or check if val != nil)
-		// Although not implemented here, this is very handy for deleting tracks, without having to
-		// keeping track of all the IDs which are deleted
+		track, found := db.Get(id)
+		if found {
+			response := make(map[string]interface{})
+			response["H_date"] = track.Date
+			response["pilot"] = track.Pilot
+			response["glider"] = track.GliderType
+			response["glider_id"] = track.GliderID
+			response["track_length"] = track.Task.Distance()
+			response["track_src_url"] = track.TrackSourceURL
 
-		if track, ok := tracks[id]; ok { // The track exists
-			track.Task.Start = track.Points[0] // Set the points of the track
-			track.Task.Finish = track.Points[len(track.Points)-1]
-			track.Task.Turnpoints = track.Points[1 : len(track.Points)-1] // [from, including : to, not including]
-
-			tInfo := TrackInfo{ // Copy the relevant information into a TrackInfo object
-				HDate:       track.Header.Date,
-				Pilot:       track.Header.Pilot,
-				GliderID:    track.Header.GliderID,
-				Glider:      track.Header.GliderType,
-				TrackLength: track.Task.Distance(),
-			}
-
-			if len(parts) == 1 { // /<id>, send back all information about the ID
-				w.Header().Set("content-type", "application/json")
-				json.NewEncoder(w).Encode(tInfo)
-			} else { // /<id>/<field>, send back only information about the given field
+			if len(parts) == 1 { // /track/<ID>/
+				json.NewEncoder(w).Encode(response)
+			} else { // /track/<ID>/<field>/
 				w.Header().Set("content-type", "text/plain")
-				jsonString, _ := json.Marshal(tInfo) // Convert the TrackInfo to a JSON string ([]byte)
-
-				var trackFields map[string]interface{}   // Create a map out of the JSON string (the field is the key). Map to interface to allow all types
-				json.Unmarshal(jsonString, &trackFields) // Unmarshaling the JSON string to a map
 
 				field := parts[1]
-				if res, found := trackFields[field]; found {
+				if res, found := response[field]; found {
 					fmt.Fprintln(w, res)
 				} else {
 					http.Error(w, "Invalid field given", http.StatusNotFound)
 				}
 			}
-		} else { // ID/track was not found
+
+		} else {
 			http.Error(w, "Invalid ID given", http.StatusNotFound)
+
 		}
+
 	default:
 		http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
 	}

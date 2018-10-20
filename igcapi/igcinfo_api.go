@@ -1,23 +1,28 @@
 package igcapi
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
-	"reflect"
+	"io/ioutil"
+	"net/http"
 	"time"
 
 	igc "github.com/marni/goigc"
 )
 
 var (
-	startTime time.Time         // The start time of the application/API
-	tracks    map[int]igc.Track // Maps ID to its corresponding track
-	nextID    int               // The next ID to be used
+	startTime time.Time // The start time of the application/API
+	nextID    int       // The next ID to be used
+)
+
+const (
+	discordWebhook = "https://discordapp.com/api/webhooks/503200944650059786/oMgOMvTiNxpuVonieqfvpg5jajVZDV8I3cHQxvkT92ww4jrpBmrANvbxyFVVQXGYuCnk"
 )
 
 func init() {
 	startTime = time.Now()
-	tracks = make(map[int]igc.Track)
-	nextID = 1 // Start at 1 to avoid potential conversions from string (which returns 0 if not an int)
+	nextID = db.GetLastID()
 }
 
 /*
@@ -27,6 +32,15 @@ type APIInfo struct {
 	Uptime  string `json:"uptime"`
 	Info    string `json:"info"`
 	Version string `json:"version"`
+}
+
+/*
+Track contains a track (igc.Track), its ID and the source URL
+*/ // TODO: Find better name
+type Track struct {
+	TrackID        int    `json:"trackid"`
+	TrackSourceURL string `json:"track_src_url"`
+	igc.Track      `json:"igctrack"`
 }
 
 // FormatISO8601 formats time.Duration to a string according to the ISO8601 standard
@@ -55,12 +69,43 @@ func RemoveEmpty(arr []string) []string {
 	return newArr
 }
 
-// TrackAlreadyAdded checks if a track has already been added. Returns the ID if it exists
-func TrackAlreadyAdded(track igc.Track) (int, bool) {
-	for id, val := range tracks {
-		if reflect.DeepEqual(track, val) {
-			return id, true
+// ClockTrigger checks every 10 minutes if the number of tracks has changed, and notifies if it has
+func ClockTrigger() {
+	delay := time.Minute * 10
+	previousTrackNum := db.Count()
+
+	for {
+		if previousTrackNum != db.Count() {
+			previousTrackNum = db.Count()
+			NotifyDiscord()
 		}
+
+		time.Sleep(delay)
 	}
-	return 0, false
+
+}
+
+// NotifyDiscord sends an update to a discord channel
+func NotifyDiscord() {
+	content := make(map[string]string)
+	content["content"] = "There has been an update to the database!\n"
+	raw, _ := json.Marshal(content)
+
+	resp, err := http.Post(discordWebhook, "application/json", bytes.NewBuffer(raw))
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println(ioutil.ReadAll(resp.Body))
+	}
+}
+
+func SendNotificationAnyway() {
+	content := make(map[string]string)
+	content["content"] = "Sadly, no update. But hey, you deserve to be loved as well!\n"
+	raw, _ := json.Marshal(content)
+
+	resp, err := http.Post(discordWebhook, "application/json", bytes.NewBuffer(raw))
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println(ioutil.ReadAll(resp.Body))
+	}
 }

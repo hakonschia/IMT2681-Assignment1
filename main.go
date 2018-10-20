@@ -14,6 +14,8 @@ import (
 //
 
 func main() {
+	go igcapi.ClockTrigger() // Start the clock trigger on a seperate thread
+
 	port, portOk := os.LookupEnv("PORT")
 	if !portOk {
 		port = "8080" // 8080 is used as the default port
@@ -35,6 +37,7 @@ func main() {
 	err := http.ListenAndServe(":"+port, nil)
 
 	log.Fatalf("Server error: %s", err)
+
 }
 
 //

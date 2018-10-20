@@ -58,10 +58,10 @@ func Test_handlerAPI_info(t *testing.T) {
 		t.Errorf("Key 0 expected to be '%s', got '%s'.", "uptime", keys[0])
 	}
 	if keys[1].Interface() != "info" {
-		t.Errorf("Key 0 expected to be '%s', got '%s'.", "info", keys[0])
+		t.Errorf("Key 1 expected to be '%s', got '%s'.", "info", keys[1])
 	}
 	if keys[2].Interface() != "version" {
-		t.Errorf("Key 0 expected to be '%s', got '%s'.", "version", keys[0])
+		t.Errorf("Key 2 expected to be '%s', got '%s'.", "version", keys[2])
 	}
 
 	// Compare the values

@@ -9,8 +9,8 @@ import (
 	mgo "gopkg.in/mgo.v2"
 )
 
-func setup(t *testing.T) *TrackMongoDB {
-	db := &TrackMongoDB{
+func setup(t *testing.T) *TrackDB {
+	db := &TrackDB{
 		DatabaseURL:         "mongodb://localhost",
 		DatabaseName:        "testTrackDB",
 		TrackCollectionName: "tracks",
@@ -26,7 +26,7 @@ func setup(t *testing.T) *TrackMongoDB {
 	return db
 }
 
-func tearDown(t *testing.T, db *TrackMongoDB) {
+func tearDown(t *testing.T, db *TrackDB) {
 	session, err := mgo.Dial(db.DatabaseURL)
 	defer session.Close()
 
@@ -50,8 +50,8 @@ func Test_addTrackToDB(t *testing.T) {
 	}
 
 	newTrack := Track{
-		Track:   igc.NewTrack(),
 		TrackID: 1,
+		Track:   igc.NewTrack(),
 	}
 
 	db.Add(newTrack)
@@ -69,15 +69,17 @@ func Test_getTrackFromDB(t *testing.T) {
 		t.Errorf("Database not initialised properly, count is %d", db.Count())
 	}
 
-	parsedTrack, err := igc.ParseLocation("http://skypolaris.org/wp-content/uploads/IGS%20Files/Madrid%20to%20Jerez.igc")
+	url := "http://skypolaris.org/wp-content/uploads/IGS%20Files/Madrid%20to%20Jerez.igc"
+	parsedTrack, err := igc.ParseLocation(url)
 	if err != nil {
 		t.Error("Couldn't parse the track URL")
 		return
 	}
 
 	newTrack := Track{
-		Track:   parsedTrack,
-		TrackID: 1,
+		TrackID:        1,
+		TrackSourceURL: url,
+		Track:          parsedTrack,
 	}
 
 	db.Add(newTrack)
@@ -91,7 +93,7 @@ func Test_getTrackFromDB(t *testing.T) {
 		t.Error("Couldn't find a track with id %D", id)
 	}
 
-	if reflect.DeepEqual(newTrack, trackFromDB) {
+	if !reflect.DeepEqual(newTrack, trackFromDB) {
 		t.Errorf("Tracks are not equal")
 	}
 
