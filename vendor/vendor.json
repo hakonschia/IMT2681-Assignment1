@@ -37,6 +37,36 @@
 			"path": "github.com/marni/goigc",
 			"revision": "71f274dd21ef320ccbb6c6271c7df7fd8a908779",
 			"revisionTime": "2018-09-09T23:15:54Z"
+		},
+		{
+			"checksumSHA1": "bS5Kp6YjeXz4nvvS55CqIBP+HzM=",
+			"path": "gopkg.in/mgo.v2",
+			"revision": "9856a29383ce1c59f308dd1cf0363a79b5bef6b5",
+			"revisionTime": "2018-07-05T11:36:04Z"
+		},
+		{
+			"checksumSHA1": "/xRHTpN8WOK4nmZjJ1f96ER1b/o=",
+			"path": "gopkg.in/mgo.v2/bson",
+			"revision": "9856a29383ce1c59f308dd1cf0363a79b5bef6b5",
+			"revisionTime": "2018-07-05T11:36:04Z"
+		},
+		{
+			"checksumSHA1": "XQsrqoNT1U0KzLxOFcAZVvqhLfk=",
+			"path": "gopkg.in/mgo.v2/internal/json",
+			"revision": "9856a29383ce1c59f308dd1cf0363a79b5bef6b5",
+			"revisionTime": "2018-07-05T11:36:04Z"
+		},
+		{
+			"checksumSHA1": "LEvMCnprte47qdAxWvQ/zRxVF1U=",
+			"path": "gopkg.in/mgo.v2/internal/sasl",
+			"revision": "9856a29383ce1c59f308dd1cf0363a79b5bef6b5",
+			"revisionTime": "2018-07-05T11:36:04Z"
+		},
+		{
+			"checksumSHA1": "+1WDRPaOphSCmRMxVPIPBV4aubc=",
+			"path": "gopkg.in/mgo.v2/internal/scram",
+			"revision": "9856a29383ce1c59f308dd1cf0363a79b5bef6b5",
+			"revisionTime": "2018-07-05T11:36:04Z"
 		}
 	],
 	"rootPath": "github.com/hakonschia/igcinfo_api"
