@@ -29,17 +29,6 @@ type APIInfo struct {
 	Version string `json:"version"`
 }
 
-/*
-TrackInfo contains basic information about a track
-*/
-type TrackInfo struct {
-	HDate       time.Time `json:"H_date"`
-	Pilot       string    `json:"pilot"`
-	Glider      string    `json:"glider"`
-	GliderID    string    `json:"glider_id"`
-	TrackLength float64   `json:"track_length"`
-}
-
 // FormatISO8601 formats time.Duration to a string according to the ISO8601 standard
 func FormatISO8601(t time.Duration) string {
 	seconds := int64(t.Seconds()) % 60 // These functions return the total time for each field (e.g 200 seconds)

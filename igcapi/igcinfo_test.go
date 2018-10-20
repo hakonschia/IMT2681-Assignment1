@@ -14,7 +14,7 @@ import (
 
 // Tests that the same track cannot be added two times
 func Test_trackAlreadyAdded(t *testing.T) {
-	testServer := httptest.NewServer(http.HandlerFunc(HandlerIGC))
+	testServer := httptest.NewServer(http.HandlerFunc(HandlerTrack))
 	defer testServer.Close()
 
 	// Post a url to the server
