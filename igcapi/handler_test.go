@@ -65,7 +65,7 @@ func Test_handlerAPI_info(t *testing.T) {
 	}
 
 	// Compare the values
-	if res["uptime"] != "P0Y0M0DT0H0M0S" {
+	if res["uptime"] != "P0Y0M0DT0H0M0S" { // This test might fail, because other tests can be ran before, making the uptime > 0 seconds
 		t.Errorf("Uptime expected to be '%s', got '%s'", "P0Y0M0DT0H0M0S", res["uptime"])
 	}
 	if res["info"] != "Service for IGC tracks" {
@@ -78,7 +78,7 @@ func Test_handlerAPI_info(t *testing.T) {
 
 // Tests that posting to the server returns the correct response (the ID)
 func Test_handlerIGC_POST(t *testing.T) {
-	testServer := httptest.NewServer(http.HandlerFunc(HandlerIGC))
+	testServer := httptest.NewServer(http.HandlerFunc(HandlerTrack))
 	defer testServer.Close()
 
 	response := PostURLToServer(t, testServer)
@@ -95,7 +95,7 @@ func Test_handlerIGC_POST(t *testing.T) {
 
 // Tests that /igcinfo/api/igc/ returns an empty array before anything is posted
 func Test_handlerIGC_empty(t *testing.T) {
-	testServer := httptest.NewServer(http.HandlerFunc(HandlerIGC))
+	testServer := httptest.NewServer(http.HandlerFunc(HandlerTrack))
 	defer testServer.Close()
 
 	url := testServer.URL + "/igcinfo/api/igc/"
@@ -115,7 +115,7 @@ func Test_handlerIGC_empty(t *testing.T) {
 
 // Tests that /igcinfo/api/igc/<ID> returns the correct information about the track with ID 1
 func Test_handlerIGC_ID(t *testing.T) {
-	testServer := httptest.NewServer(http.HandlerFunc(HandlerIGC))
+	testServer := httptest.NewServer(http.HandlerFunc(HandlerTrack))
 	defer testServer.Close()
 
 	url := testServer.URL + "/igcinfo/api/igc/"
@@ -149,7 +149,7 @@ func Test_handlerIGC_ID(t *testing.T) {
 
 // Checks that all the fields match after posted to the server
 func Test_handlerIGC_ID_Field(t *testing.T) {
-	testServer := httptest.NewServer(http.HandlerFunc(HandlerIGC))
+	testServer := httptest.NewServer(http.HandlerFunc(HandlerTrack))
 	defer testServer.Close()
 
 	url := testServer.URL + "/igcinfo/api/igc/"
