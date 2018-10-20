@@ -21,13 +21,15 @@ func main() {
 
 	fmt.Println("Port is:", port)
 
-	http.HandleFunc("/igcinfo/api/igc/", igcapi.HandlerIGC)
-	http.HandleFunc("/igcinfo/api/", igcapi.HandlerAPI)
-	http.HandleFunc("/igcinfo/", func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "Not allowed at /igcinfo.", http.StatusNotFound)
+	http.HandleFunc("/paragliding/api/ticker/latest/", igcapi.HandlerTrack)
+	http.HandleFunc("/paragliding/api/ticker/", igcapi.HandlerTicker)
+	http.HandleFunc("/paragliding/api/track/", igcapi.HandlerTrack)
+	http.HandleFunc("/paragliding/api/", igcapi.HandlerAPI)
+	http.HandleFunc("/paragliding/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/paragliding/api/", http.StatusMovedPermanently)
 	})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "Not allowed at root.", http.StatusNotFound)
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	})
 
 	err := http.ListenAndServe(":"+port, nil)
