@@ -14,7 +14,7 @@ import (
 //
 
 func main() {
-	go igcapi.ClockTrigger() // Start the clock trigger on a seperate thread
+	go igcapi.ClockTrigger()
 
 	port, portOk := os.LookupEnv("PORT")
 	if !portOk {
@@ -23,6 +23,7 @@ func main() {
 
 	fmt.Println("Port is:", port)
 
+	http.HandleFunc("/paragliding/api/webhook/new_track/", igcapi.HandlerWebhook)
 	http.HandleFunc("/paragliding/api/ticker/latest/", igcapi.HandlerTrack)
 	http.HandleFunc("/paragliding/api/ticker/", igcapi.HandlerTicker)
 	http.HandleFunc("/paragliding/api/track/", igcapi.HandlerTrack)
