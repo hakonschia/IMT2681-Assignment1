@@ -176,12 +176,32 @@ func (db *TrackDB) GetLastID() int {
 	// MongoDB sorts based on insertion time, so the last element can be found via the number of elements
 	err = session.DB(db.DatabaseName).C(db.TrackCollectionName).Find(bson.M{}).One(&track)
 	if err != nil {
-		fmt.Println("Couldn't retrieve the last ID from the database.")
+		fmt.Println("Couldn't retrieve the last ID from the database:", err.Error())
 	} else {
 		fmt.Println("NextID:", track.ID+1)
 	}
 
+	fmt.Println(track)
+
 	return track.ID
+}
+
+/*
+DeleteAll deletes all tracks from the database, and returns how many tracks were deleted
+*/
+func (db *TrackDB) DeleteAll() int {
+	session, err := mgo.Dial(db.DatabaseURL)
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+
+	info, err := session.DB(db.DatabaseName).C(db.TrackCollectionName).RemoveAll(bson.M{})
+	if err != nil {
+		fmt.Println("Error removing from database:", err.Error())
+	}
+
+	return info.Removed
 }
 
 //
@@ -240,14 +260,16 @@ func (db *WebhookDB) GetLastID() int {
 	}
 	defer session.Close()
 
-	var track TrackInfo
+	var wh Webhook
 	// MongoDB sorts based on insertion time, so the last element can be found via the number of elements
-	err = session.DB(db.DatabaseName).C(db.TrackCollectionName).Find(bson.M{}).One(&track)
+	err = session.DB(db.DatabaseName).C(db.TrackCollectionName).Find(bson.M{}).One(&wh)
 	if err != nil {
 		fmt.Println("Couldn't retrieve the last ID from the database.")
 	}
 
-	return track.ID
+	fmt.Println(wh)
+
+	return wh.ID
 }
 
 /*

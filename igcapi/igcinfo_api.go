@@ -23,6 +23,7 @@ func init() {
 	startTime = time.Now()
 	nextID = db.GetLastID() + 1
 	nextWBID = webhookDB.GetLastID() + 1
+	fmt.Println("NextWB:", nextWBID)
 }
 
 /*
@@ -45,6 +46,7 @@ type TrackInfo struct {
 	TrackLength    float64   `json:"track_length"`
 	TrackSourceURL string    `json:"track_src_url"`
 	ID             int       `json:"-"`
+	Timestamp      int64     `json:"-"`
 }
 
 /*
@@ -54,6 +56,7 @@ type Webhook struct {
 	URL             string `json:"webhookURL"`
 	MinTriggerValue int    `json:"minTriggerValue`
 	ID              int    `json:"-"`
+	Timestamp       int64  `json:"-"`
 }
 
 /*

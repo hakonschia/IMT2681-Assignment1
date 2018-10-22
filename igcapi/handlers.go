@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	dbURL string = "mongodb://" + dbUser + ":" + dbPassword + "@ds125502.mlab.com:25502/paragliding" // The URL used to connect to the database
+	dbURL = "mongodb://" + dbUser + ":" + dbPassword + "@ds125502.mlab.com:25502/paragliding" // The URL used to connect to the database
 )
 
 var (
@@ -110,6 +110,7 @@ func HandlerTrack(w http.ResponseWriter, r *http.Request) {
 				TrackLength:    parsedTrack.Task.Distance(),
 				TrackSourceURL: url,
 				ID:             nextID,
+				Timestamp:      time.Now().Unix(),
 			}
 
 			if db.Add(track) {
@@ -220,10 +221,19 @@ func HandlerWebhook(w http.ResponseWriter, r *http.Request) {
 			contentMap := make(map[string]interface{})
 			json.Unmarshal(bodyStr, &contentMap)
 
-			var wh Webhook
-			wh.URL = contentMap["webhookURL"].(string)
-			wh.MinTriggerValue = int(contentMap["minTriggerValue"].(float64))
-			wh.ID = nextWBID
+			wh := Webhook{
+				URL:       contentMap["webhookURL"].(string),
+				ID:        nextWBID,
+				Timestamp: time.Now().Unix(),
+			}
+
+			triggerValue := contentMap["minTriggerValue"]
+
+			if triggerValue == nil || triggerValue.(int) == 0 {
+				triggerValue = 1
+			}
+
+			wh.MinTriggerValue = triggerValue.(int)
 
 			if webhookDB.Add(wh) {
 				fmt.Fprintln(w, "ID for the new Webhook:", wh.ID)
@@ -269,6 +279,33 @@ func HandlerWebhookID(w http.ResponseWriter, r *http.Request) {
 
 	default:
 		http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
+	}
+}
 
+/*
+HandlerAdminTrackCount handles /paragliding/admin/api/tracks_count/
+*/
+func HandlerAdminTrackCount(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		w.Header().Set("content-type", "text/plain")
+		fmt.Fprintln(w, db.Count())
+
+	default:
+		http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
+	}
+}
+
+/*
+HandlerAdminTrack handles /paragliding/admin/api/tracks/
+*/
+func HandlerAdminTrack(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodDelete:
+		countDeleted := db.DeleteAll()
+		fmt.Fprintln(w, "Deleted tracks:", countDeleted)
+
+	default:
+		http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
 	}
 }

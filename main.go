@@ -23,6 +23,7 @@ func main() {
 
 	fmt.Println("Port is:", port)
 
+	http.HandleFunc("/paragliding/admin/api/tracks_count/", igcapi.HandlerAdminTrackCount)
 	http.HandleFunc("/paragliding/api/webhook/new_track/", igcapi.HandlerWebhook)
 	http.HandleFunc("/paragliding/api/ticker/latest/", igcapi.HandlerTrack)
 	http.HandleFunc("/paragliding/api/ticker/", igcapi.HandlerTicker)
@@ -38,7 +39,6 @@ func main() {
 	err := http.ListenAndServe(":"+port, nil)
 
 	log.Fatalf("Server error: %s", err)
-
 }
 
 //
