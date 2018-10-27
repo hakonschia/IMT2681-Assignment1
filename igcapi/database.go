@@ -108,7 +108,9 @@ func (db *TrackDB) Get(key int) (TrackInfo, bool) {
 	return track, trackFound
 }
 
-// GetAll returns all the tracks in the database, or a potential error
+/*
+GetAll returns all the tracks in the database, or a potential error
+*/
 func (db *TrackDB) GetAll() ([]TrackInfo, error) {
 	session, err := mgo.Dial(db.DatabaseURL)
 	if err != nil {
@@ -129,14 +131,14 @@ func (db *TrackDB) GetAll() ([]TrackInfo, error) {
 /*
 GetID gets the id of a given track (not implemented)
 */
-func (db *TrackDB) GetID(t TrackInfo) string {
+func (db *TrackDB) GetID(t TrackInfo) int {
 	session, err := mgo.Dial(db.DatabaseURL)
 	if err != nil {
 		panic(err)
 	}
 	defer session.Close()
 
-	return ""
+	return 0
 }
 
 /*
@@ -164,6 +166,24 @@ func (db *TrackDB) GetAllIDs() ([]int, error) {
 	return IDs, nil
 }
 
+/*
+GetLast returns the last in the DB
+*/
+func (db *TrackDB) GetLast() (TrackInfo, error) {
+	session, err := mgo.Dial(db.DatabaseURL)
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+
+	tracks, err := db.GetAll()
+	if err != nil {
+		fmt.Println("Error retreiving from DB:", err.Error())
+		return TrackInfo{}, err
+	}
+	return tracks[len(tracks)-1], nil
+}
+
 // GetLastID returns the last used track ID
 func (db *TrackDB) GetLastID() int {
 	session, err := mgo.Dial(db.DatabaseURL)
@@ -172,18 +192,14 @@ func (db *TrackDB) GetLastID() int {
 	}
 	defer session.Close()
 
-	var track TrackInfo
-	// MongoDB sorts based on insertion time, so the last element can be found via the number of elements
-	err = session.DB(db.DatabaseName).C(db.TrackCollectionName).Find(bson.M{}).One(&track)
+	lastTrack, err := db.GetLast()
 	if err != nil {
 		fmt.Println("Couldn't retrieve the last ID from the database:", err.Error())
-	} else {
-		fmt.Println("NextID:", track.ID+1)
+		return 0
 	}
+	fmt.Println("NextID:", lastTrack.ID+1)
 
-	fmt.Println(track)
-
-	return track.ID
+	return lastTrack.ID
 }
 
 /*
@@ -266,8 +282,6 @@ func (db *WebhookDB) GetLastID() int {
 	if err != nil {
 		fmt.Println("Couldn't retrieve the last ID from the database.")
 	}
-
-	fmt.Println(wh)
 
 	return wh.ID
 }

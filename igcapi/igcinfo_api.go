@@ -137,3 +137,13 @@ func SendNotificationAnyway() {
 		fmt.Println(err.Error())
 	}
 }
+
+/*
+Min returns the smallest value of a and b
+*/
+func Min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}

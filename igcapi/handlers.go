@@ -55,11 +55,13 @@ func HandlerAPI(w http.ResponseWriter, r *http.Request) {
 
 			json.NewEncoder(w).Encode(&info)
 		} else { // /paragliding/api/<rubbish>
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			statusCode := http.StatusNotFound
+			http.Error(w, http.StatusText(statusCode), statusCode)
 		}
 
 	default:
-		http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
+		statusCode := http.StatusNotImplemented
+		http.Error(w, http.StatusText(statusCode), statusCode)
 	}
 }
 
@@ -125,16 +127,16 @@ func HandlerTrack(w http.ResponseWriter, r *http.Request) {
 			}
 
 		default:
-			http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
-			return
+			statusCode := http.StatusNotImplemented
+			http.Error(w, http.StatusText(statusCode), statusCode)
 		}
 
 	case 2, 3: // PATH: /<id> or /<id>/<field>
 		HandlerTrackFieldID(w, r)
 
 	default: // More than 3 parts in the url (after /api/) is not implemented
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
+		statusCode := http.StatusBadRequest
+		http.Error(w, http.StatusText(statusCode), statusCode)
 	}
 }
 
@@ -173,17 +175,18 @@ func HandlerTrackFieldID(w http.ResponseWriter, r *http.Request) {
 				if res, found := response[field]; found {
 					fmt.Fprintln(w, res)
 				} else {
-					http.Error(w, "Invalid field given", http.StatusNotFound)
+					http.Error(w, "Invalid field given", http.StatusBadRequest)
 				}
 			}
 
 		} else {
-			http.Error(w, "Invalid ID given", http.StatusNotFound)
+			http.Error(w, "Invalid ID given", http.StatusBadRequest)
 
 		}
 
 	default:
-		http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
+		statusCode := http.StatusNotImplemented
+		http.Error(w, http.StatusText(statusCode), statusCode)
 	}
 }
 
@@ -191,6 +194,86 @@ func HandlerTrackFieldID(w http.ResponseWriter, r *http.Request) {
 HandlerTicker handles /paragliding/api/ticker/
 */
 func HandlerTicker(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		w.Header().Set("content-type", "application/json")
+		parts := RemoveEmpty(strings.Split(r.URL.Path, "/"))
+		parts = parts[2:]
+
+		pagingSize := 5
+
+		taskStart := time.Now().Unix()
+
+		tracks, err := db.GetAll()
+		if err != nil {
+			fmt.Println("Error retrieving from DB, DB could be empty.")
+			return
+		}
+
+		type ticker struct {
+			TLatest    int64 `json:"t_latest"`
+			TStart     int64 `json:"t_start"`
+			TStop      int64 `json:"t_stop"`
+			Tracks     []int `json:"tracks"`
+			Processing int64 `json:"processing"`
+		}
+
+		switch len(parts) {
+		case 1, 2: // /ticker/ and /ticker/<timestamp>
+			if len(parts) == 2 { // If /ticker/<timestamp> we simply modify the start of the track array
+				timestamp, err := strconv.Atoi(parts[1])
+				if err != nil {
+					http.Error(w, "Invalid ID type given", http.StatusBadRequest)
+					return
+				}
+
+				trackStart := -1
+				for i, val := range tracks {
+					if val.Timestamp == int64(timestamp) {
+						trackStart = i + 1 // The tracks should start at the NEXT after the timestamp
+					}
+				}
+
+				if trackStart == -1 { // If the timestamp wasn't found
+					http.Error(w, "Invalid ID given", http.StatusBadRequest)
+					return
+				}
+
+				if trackStart >= len(tracks) { // The timestamp given is the newest in the DB
+					w.Header().Set("content-type", "text/plain")
+					fmt.Fprintln(w, "No new added tracks")
+					return
+				}
+
+				tracks = tracks[trackStart:] // Remove the tracks before
+			}
+
+			trackIDs := []int{}
+			amountOfTracks := Min(pagingSize, len(tracks)) // The amount of tracks on the "page"
+
+			for i := 0; i < amountOfTracks; i++ {
+				trackIDs = append(trackIDs, tracks[i].ID)
+			}
+
+			response := ticker{
+				TLatest:    tracks[len(tracks)-1].Timestamp,
+				TStart:     tracks[0].Timestamp,
+				TStop:      tracks[amountOfTracks-1].Timestamp,
+				Tracks:     trackIDs,
+				Processing: time.Now().Unix() - taskStart,
+			}
+
+			json.NewEncoder(w).Encode(response)
+
+		default:
+			statusCode := http.StatusBadRequest
+			http.Error(w, http.StatusText(statusCode), statusCode)
+		}
+
+	default:
+		statusCode := http.StatusNotImplemented
+		http.Error(w, http.StatusText(statusCode), statusCode)
+	}
 
 }
 
@@ -198,7 +281,20 @@ func HandlerTicker(w http.ResponseWriter, r *http.Request) {
 HandlerTickerLatest handles /paragliding/api/ticker/latest/
 */
 func HandlerTickerLatest(w http.ResponseWriter, r *http.Request) {
+	parts := RemoveEmpty(strings.Split(r.URL.Path, "/"))
+	if len(parts) == 4 {
+		t, err := db.GetLast()
+		if err != nil {
+			fmt.Println("Couldn't get a track :)")
+			return
+		}
 
+		w.Header().Set("content-type", "text/plain")
+		fmt.Fprintln(w, t.Timestamp)
+	} else {
+		statusCode := http.StatusNotFound
+		http.Error(w, http.StatusText(statusCode), statusCode)
+	}
 }
 
 /*
@@ -244,14 +340,16 @@ func HandlerWebhook(w http.ResponseWriter, r *http.Request) {
 			}
 
 		default:
-			http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
+			statusCode := http.StatusNotImplemented
+			http.Error(w, http.StatusText(statusCode), statusCode)
 		}
 
 	case 2:
 		HandlerWebhookID(w, r)
 
 	default:
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		statusCode := http.StatusBadRequest
+		http.Error(w, http.StatusText(statusCode), statusCode)
 	}
 }
 
@@ -278,7 +376,8 @@ func HandlerWebhookID(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(wh)
 
 	default:
-		http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
+		statusCode := http.StatusNotImplemented
+		http.Error(w, http.StatusText(statusCode), statusCode)
 	}
 }
 
@@ -292,7 +391,8 @@ func HandlerAdminTrackCount(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, db.Count())
 
 	default:
-		http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
+		statusCode := http.StatusNotImplemented
+		http.Error(w, http.StatusText(statusCode), statusCode)
 	}
 }
 
@@ -306,6 +406,7 @@ func HandlerAdminTrack(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "Deleted tracks:", countDeleted)
 
 	default:
-		http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
+		statusCode := http.StatusNotImplemented
+		http.Error(w, http.StatusText(statusCode), statusCode)
 	}
 }
