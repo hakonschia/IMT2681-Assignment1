@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	dbURL = "mongodb://" + dbUser + ":" + dbPassword + "@ds125502.mlab.com:25502/paragliding" // The URL used to connect to the database
+	dbURL = "mongodb://" + "admin" + ":" + "MSQwgXZ9HXU43NB" + "@ds125502.mlab.com:25502/paragliding" // The URL used to connect to the database
 )
 
 var (
