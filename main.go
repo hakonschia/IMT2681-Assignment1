@@ -24,6 +24,7 @@ func main() {
 
 	fmt.Println("Port is:", port)
 
+	http.HandleFunc("/paragliding/admin/api/tracks/", igcapi.HandlerAdminTrack)
 	http.HandleFunc("/paragliding/admin/api/tracks_count/", igcapi.HandlerAdminTrackCount)
 	http.HandleFunc("/paragliding/api/webhook/new_track/", igcapi.HandlerWebhook)
 	http.HandleFunc("/paragliding/api/ticker/latest/", igcapi.HandlerTickerLatest)

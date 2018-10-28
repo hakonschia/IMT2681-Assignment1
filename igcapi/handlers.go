@@ -402,6 +402,7 @@ HandlerAdminTrack handles /paragliding/admin/api/tracks/
 func HandlerAdminTrack(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodDelete:
+		w.Header().Set("content-type", "text/plain")
 		countDeleted := db.DeleteAll()
 		fmt.Fprintln(w, "Deleted tracks:", countDeleted)
 
