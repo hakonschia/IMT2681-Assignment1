@@ -88,7 +88,6 @@ func Test_getTrackFromDB(t *testing.T) {
 	}
 
 	newTrack := TrackInfo{
-		HDate:          parsedTrack.Date,
 		Pilot:          parsedTrack.Pilot,
 		Glider:         parsedTrack.GliderType,
 		GliderID:       parsedTrack.GliderID,

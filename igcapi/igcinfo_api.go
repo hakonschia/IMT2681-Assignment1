@@ -53,7 +53,7 @@ Webhook contains the URL and minimum trigger value for a webhook
 */
 type Webhook struct {
 	URL             string `json:"webhookURL"`
-	MinTriggerValue int    `json:"minTriggerValue`
+	MinTriggerValue int    `json:"minTriggerValue"`
 	ID              int    `json:"-"`
 	Timestamp       int64  `json:"-"`
 }

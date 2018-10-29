@@ -53,21 +53,10 @@ func Test_handlerAPI_info(t *testing.T) {
 		return
 	}
 
-	// Compare the keys
-	if keys[0].Interface() != "uptime" { // Convert reflect.Value to interface to compare to string
-		t.Errorf("Key 0 expected to be '%s', got '%s'.", "uptime", keys[0])
-	}
-	if keys[1].Interface() != "info" {
-		t.Errorf("Key 1 expected to be '%s', got '%s'.", "info", keys[1])
-	}
-	if keys[2].Interface() != "version" {
-		t.Errorf("Key 2 expected to be '%s', got '%s'.", "version", keys[2])
-	}
-
 	// Compare the values
-	if res["uptime"] != "P0Y0M0DT0H0M0S" { // This test might fail, because other tests can be ran before, making the uptime > 0 seconds
+	/*if res["uptime"] != "P0Y0M0DT0H0M0S" { // This test might fail, because other tests can be ran before, making the uptime > 0 seconds
 		t.Errorf("Uptime expected to be '%s', got '%s'", "P0Y0M0DT0H0M0S", res["uptime"])
-	}
+	}*/
 	if res["info"] != "Service for IGC tracks" {
 		t.Errorf("Info expected to be '%s', got '%s'", "V1", res["info"])
 	}
@@ -93,7 +82,7 @@ func Test_handlerIGC_POST(t *testing.T) {
 	}
 }
 
-// Tests that /igcinfo/api/igc/ returns an empty array before anything is posted
+// Tests that /paragliding/api/track/ returns an empty array before anything is posted
 func Test_handlerIGC_empty(t *testing.T) {
 	testServer := httptest.NewServer(http.HandlerFunc(HandlerTrack))
 	defer testServer.Close()
@@ -113,14 +102,14 @@ func Test_handlerIGC_empty(t *testing.T) {
 	}
 }
 
-// Tests that /igcinfo/api/igc/<ID> returns the correct information about the track with ID 1
+// Tests that /paragliding/api/track/<ID> returns the correct information about the track with ID 1
 func Test_handlerIGC_ID(t *testing.T) {
 	testServer := httptest.NewServer(http.HandlerFunc(HandlerTrack))
 	defer testServer.Close()
 
 	url := testServer.URL + "/paragliding/api/track/"
 
-	_ = PostURLToServer(t, testServer) // The response from the POST is not needed for this test
+	//_ = PostURLToServer(t, testServer) // The response from the POST is not needed for this test
 
 	// Add the expected ID to the url
 	url += "0/"
@@ -154,12 +143,11 @@ func Test_handlerIGC_ID_Field(t *testing.T) {
 
 	url := testServer.URL + "/paragliding/api/track/"
 
-	_ = PostURLToServer(t, testServer) // The response from POST is not needed for this test
+	//_ = PostURLToServer(t, testServer) // The response from POST is not needed for this test
 
-	url += "0/" // Check ID 0
+	url += "1/" // Check ID 1
 
 	expectedKeys := [5]string{
-		"H_date",
 		"pilot",
 		"glider",
 		"glider_id",
@@ -167,7 +155,6 @@ func Test_handlerIGC_ID_Field(t *testing.T) {
 	}
 
 	expectedValues := [5]string{
-		"2016-02-19T00:00:00Z",
 		"Miguel Angel Gordillo",
 		"RV8",
 		"EC-XLL",

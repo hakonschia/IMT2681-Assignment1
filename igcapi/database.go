@@ -61,7 +61,7 @@ func (db *TrackDB) Add(t TrackInfo) bool {
 
 	err = session.DB(db.DatabaseName).C(db.CollectionName).Insert(t)
 	if err != nil {
-		fmt.Errorf("Error inserting track into the DB: %s", err.Error())
+		fmt.Printf("Error inserting track into the DB: %s", err.Error())
 		return false
 	}
 

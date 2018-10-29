@@ -169,7 +169,6 @@ func HandlerTrackFieldID(w http.ResponseWriter, r *http.Request) {
 			response["track_length"] = track.TrackLength
 			response["track_src_url"] = track.TrackSourceURL
 
-			fmt.Println(track.HDate)
 			if len(parts) == 1 { // /track/<ID>/
 				json.NewEncoder(w).Encode(track)
 			} else { // /track/<ID>/<field>/
