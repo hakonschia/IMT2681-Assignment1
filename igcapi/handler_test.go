@@ -16,7 +16,7 @@ import (
 
 // PostURLToServer posts an .igc url to the server and returns the response (only testing function)
 func PostURLToServer(t *testing.T, s *httptest.Server) *http.Response {
-	url := s.URL + "/igcinfo/api/igc/"
+	url := s.URL + "/paragliding/api/track/"
 
 	postURL := "{\"url\":\"http://skypolaris.org/wp-content/uploads/IGS%20Files/Madrid%20to%20Jerez.igc\"}"
 
@@ -37,7 +37,7 @@ func Test_handlerAPI_info(t *testing.T) {
 	testServer := httptest.NewServer(http.HandlerFunc(HandlerAPI))
 	defer testServer.Close()
 
-	url := testServer.URL + "/igcinfo/api/"
+	url := testServer.URL + "/paragliding/api/"
 
 	response, err := http.Get(url)
 	if err != nil {
@@ -88,8 +88,8 @@ func Test_handlerIGC_POST(t *testing.T) {
 	json.Unmarshal(respBody, &idMap)
 
 	id := idMap["id"]
-	if id != 1 { // The response should be the ID that was added
-		t.Errorf("Expected id 1 differs from actual %d", id)
+	if id != 0 { // The response should be the ID that was added
+		t.Errorf("Expected id 0 differs from actual %d", id)
 	}
 }
 
@@ -98,7 +98,7 @@ func Test_handlerIGC_empty(t *testing.T) {
 	testServer := httptest.NewServer(http.HandlerFunc(HandlerTrack))
 	defer testServer.Close()
 
-	url := testServer.URL + "/igcinfo/api/igc/"
+	url := testServer.URL + "/paragliding/api/track/"
 
 	response, err := http.Get(url)
 	if err != nil {
@@ -118,12 +118,12 @@ func Test_handlerIGC_ID(t *testing.T) {
 	testServer := httptest.NewServer(http.HandlerFunc(HandlerTrack))
 	defer testServer.Close()
 
-	url := testServer.URL + "/igcinfo/api/igc/"
+	url := testServer.URL + "/paragliding/api/track/"
 
 	_ = PostURLToServer(t, testServer) // The response from the POST is not needed for this test
 
 	// Add the expected ID to the url
-	url += "1/"
+	url += "0/"
 
 	response, err := http.Get(url)
 	if err != nil {
@@ -152,11 +152,11 @@ func Test_handlerIGC_ID_Field(t *testing.T) {
 	testServer := httptest.NewServer(http.HandlerFunc(HandlerTrack))
 	defer testServer.Close()
 
-	url := testServer.URL + "/igcinfo/api/igc/"
+	url := testServer.URL + "/paragliding/api/track/"
 
 	_ = PostURLToServer(t, testServer) // The response from POST is not needed for this test
 
-	url += "1/" // Check ID 1
+	url += "0/" // Check ID 0
 
 	expectedKeys := [5]string{
 		"H_date",

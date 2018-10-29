@@ -37,7 +37,6 @@ func main() {
 			http.Redirect(w, r, "/paragliding/api/", http.StatusMovedPermanently)
 		}
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-
 	})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)

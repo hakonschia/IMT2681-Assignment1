@@ -11,9 +11,9 @@ import (
 
 func setup(t *testing.T) *TrackDB {
 	db := &TrackDB{
-		DatabaseURL:         "mongodb://localhost",
-		DatabaseName:        "testTrackDB",
-		TrackCollectionName: "tracks",
+		DatabaseURL:    "mongodb://localhost",
+		DatabaseName:   "testTrackDB",
+		CollectionName: "tracks",
 	}
 
 	session, err := mgo.Dial(db.DatabaseURL)
@@ -49,9 +49,20 @@ func Test_addTrackToDB(t *testing.T) {
 		t.Errorf("Database not initialised properly, count is %d", db.Count())
 	}
 
-	newTrack := Track{
-		TrackID: 1,
-		Track:   igc.NewTrack(),
+	url := "http://skypolaris.org/wp-content/uploads/IGS%20Files/Madrid%20to%20Jerez.igc"
+	parsedTrack, err := igc.ParseLocation(url)
+	if err != nil {
+		t.Error("Couldn't parse the track URL")
+		return
+	}
+
+	newTrack := TrackInfo{
+		HDate:       parsedTrack.Date,
+		Pilot:       parsedTrack.Pilot,
+		Glider:      parsedTrack.GliderType,
+		GliderID:    parsedTrack.GliderID,
+		TrackLength: parsedTrack.Task.Distance(),
+		ID:          1,
 	}
 
 	db.Add(newTrack)
@@ -76,10 +87,14 @@ func Test_getTrackFromDB(t *testing.T) {
 		return
 	}
 
-	newTrack := Track{
-		TrackID:        1,
+	newTrack := TrackInfo{
+		HDate:          parsedTrack.Date,
+		Pilot:          parsedTrack.Pilot,
+		Glider:         parsedTrack.GliderType,
+		GliderID:       parsedTrack.GliderID,
+		TrackLength:    parsedTrack.Task.Distance(),
+		ID:             1,
 		TrackSourceURL: url,
-		Track:          parsedTrack,
 	}
 
 	db.Add(newTrack)
@@ -118,15 +133,20 @@ func Test_addDuplicateToDB(t *testing.T) {
 		t.Errorf("Database not initialised properly, count is %d", db.Count())
 	}
 
-	parsedTrack, err := igc.ParseLocation("http://skypolaris.org/wp-content/uploads/IGS%20Files/Madrid%20to%20Jerez.igc")
+	url := "http://skypolaris.org/wp-content/uploads/IGS%20Files/Madrid%20to%20Jerez.igc"
+	parsedTrack, err := igc.ParseLocation(url)
 	if err != nil {
 		t.Error("Couldn't parse the track URL")
 		return
 	}
 
-	newTrack := Track{
-		Track:   parsedTrack,
-		TrackID: 1,
+	newTrack := TrackInfo{
+		HDate:       parsedTrack.Date,
+		Pilot:       parsedTrack.Pilot,
+		Glider:      parsedTrack.GliderType,
+		GliderID:    parsedTrack.GliderID,
+		TrackLength: parsedTrack.Task.Distance(),
+		ID:          1,
 	}
 
 	_ = db.Add(newTrack)

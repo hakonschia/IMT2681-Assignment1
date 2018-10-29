@@ -23,7 +23,6 @@ func init() {
 	startTime = time.Now()
 	nextID = db.GetLastID() + 1
 	nextWBID = webhookDB.GetLastID() + 1
-	fmt.Println("NextWB:", nextWBID)
 }
 
 /*

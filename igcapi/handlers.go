@@ -23,16 +23,16 @@ var (
 
 func init() {
 	db = TrackDB{
-		DatabaseURL:         dbURL,
-		DatabaseName:        "paragliding",
-		TrackCollectionName: "tracks",
+		DatabaseURL:    dbURL,
+		DatabaseName:   "paragliding",
+		CollectionName: "tracks",
 	}
 	db.Init()
 
 	webhookDB = WebhookDB{
-		DatabaseURL:         dbURL,
-		DatabaseName:        "paragliding",
-		TrackCollectionName: "webhooks",
+		DatabaseURL:    dbURL,
+		DatabaseName:   "paragliding",
+		CollectionName: "webhooks",
 	}
 	webhookDB.Init()
 }
@@ -109,11 +109,15 @@ func HandlerTrack(w http.ResponseWriter, r *http.Request) {
 				Pilot:          parsedTrack.Pilot,
 				Glider:         parsedTrack.GliderType,
 				GliderID:       parsedTrack.GliderID,
-				TrackLength:    parsedTrack.Task.Distance(),
 				TrackSourceURL: url,
 				ID:             nextID,
 				Timestamp:      time.Now().Unix(),
 			}
+
+			parsedTrack.Task.Start = parsedTrack.Points[0] // Set the points of the track
+			parsedTrack.Task.Finish = parsedTrack.Points[len(parsedTrack.Points)-1]
+			parsedTrack.Task.Turnpoints = parsedTrack.Points[1 : len(parsedTrack.Points)-1] // [from, including : to, not including]
+			track.TrackLength = parsedTrack.Task.Distance()
 
 			if db.Add(track) {
 				idMap := make(map[string]int)

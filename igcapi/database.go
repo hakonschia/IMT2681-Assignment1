@@ -11,18 +11,18 @@ import (
 TrackDB stores information used to connect to a database storing track information
 */
 type TrackDB struct {
-	DatabaseURL         string `json:"databaseurl"`
-	DatabaseName        string `json:"databasename"`
-	TrackCollectionName string `json:"trackcollectionname"`
+	DatabaseURL    string `json:"databaseurl"`
+	DatabaseName   string `json:"databasename"`
+	CollectionName string `json:"collectionmame"`
 }
 
 /*
 WebhookDB stores information used to connect to a database storing webhook information
 */
 type WebhookDB struct {
-	DatabaseURL         string `json:"databaseurl"`
-	DatabaseName        string `json:"databasename"`
-	TrackCollectionName string `json:"trackcollectionname"`
+	DatabaseURL    string `json:"databaseurl"`
+	DatabaseName   string `json:"databasename"`
+	CollectionName string `json:"collectionname"`
 }
 
 /*
@@ -43,7 +43,7 @@ func (db *TrackDB) Init() {
 		Sparse:     true,
 	}
 
-	err = session.DB(db.DatabaseName).C(db.TrackCollectionName).EnsureIndex(index)
+	err = session.DB(db.DatabaseName).C(db.CollectionName).EnsureIndex(index)
 	if err != nil {
 		panic(err)
 	}
@@ -59,7 +59,7 @@ func (db *TrackDB) Add(t TrackInfo) bool {
 	}
 	defer session.Close()
 
-	err = session.DB(db.DatabaseName).C(db.TrackCollectionName).Insert(t)
+	err = session.DB(db.DatabaseName).C(db.CollectionName).Insert(t)
 	if err != nil {
 		fmt.Errorf("Error inserting track into the DB: %s", err.Error())
 		return false
@@ -78,7 +78,7 @@ func (db *TrackDB) Count() int {
 	}
 	defer session.Close()
 
-	count, err := session.DB(db.DatabaseName).C(db.TrackCollectionName).Count()
+	count, err := session.DB(db.DatabaseName).C(db.CollectionName).Count()
 	if err != nil {
 		fmt.Printf("Error retrieving the count from the database: %s", err.Error())
 		return -1
@@ -100,7 +100,7 @@ func (db *TrackDB) Get(key int) (TrackInfo, bool) {
 	trackFound := true
 	track := TrackInfo{}
 
-	err = session.DB(db.DatabaseName).C(db.TrackCollectionName).Find(bson.M{"id": key}).One(&track)
+	err = session.DB(db.DatabaseName).C(db.CollectionName).Find(bson.M{"id": key}).One(&track)
 	if err != nil {
 		trackFound = false
 	}
@@ -120,25 +120,12 @@ func (db *TrackDB) GetAll() ([]TrackInfo, error) {
 
 	tracks := []TrackInfo{}
 
-	err = session.DB(db.DatabaseName).C(db.TrackCollectionName).Find(bson.M{}).All(&tracks)
+	err = session.DB(db.DatabaseName).C(db.CollectionName).Find(bson.M{}).All(&tracks)
 	if err != nil {
 		return []TrackInfo{}, err
 	}
 
 	return tracks, nil
-}
-
-/*
-GetID gets the id of a given track (not implemented)
-*/
-func (db *TrackDB) GetID(t TrackInfo) int {
-	session, err := mgo.Dial(db.DatabaseURL)
-	if err != nil {
-		panic(err)
-	}
-	defer session.Close()
-
-	return 0
 }
 
 /*
@@ -153,7 +140,7 @@ func (db *TrackDB) GetAllIDs() ([]int, error) {
 
 	var tracks []TrackInfo
 
-	err = session.DB(db.DatabaseName).C(db.TrackCollectionName).Find(nil).All(&tracks)
+	err = session.DB(db.DatabaseName).C(db.CollectionName).Find(nil).All(&tracks)
 	if err != nil {
 		return []int{}, nil
 	}
@@ -178,7 +165,7 @@ func (db *TrackDB) GetLast() (TrackInfo, error) {
 
 	tracks, err := db.GetAll()
 	if err != nil {
-		fmt.Println("Error retreiving from DB:", err.Error())
+		fmt.Println("Error retrieving from DB:", err.Error())
 		return TrackInfo{}, err
 	}
 	return tracks[len(tracks)-1], nil
@@ -195,9 +182,8 @@ func (db *TrackDB) GetLastID() int {
 	lastTrack, err := db.GetLast()
 	if err != nil {
 		fmt.Println("Couldn't retrieve the last ID from the database:", err.Error())
-		return 0
+		return -1
 	}
-	fmt.Println("NextID:", lastTrack.ID+1)
 
 	return lastTrack.ID
 }
@@ -212,7 +198,7 @@ func (db *TrackDB) DeleteAll() int {
 	}
 	defer session.Close()
 
-	info, err := session.DB(db.DatabaseName).C(db.TrackCollectionName).RemoveAll(bson.M{})
+	info, err := session.DB(db.DatabaseName).C(db.CollectionName).RemoveAll(bson.M{})
 	if err != nil {
 		fmt.Println("Error removing from database:", err.Error())
 	}
@@ -242,7 +228,7 @@ func (db *WebhookDB) Init() {
 		Sparse:     true,
 	}
 
-	err = session.DB(db.DatabaseName).C(db.TrackCollectionName).EnsureIndex(index)
+	err = session.DB(db.DatabaseName).C(db.CollectionName).EnsureIndex(index)
 	if err != nil {
 		panic(err)
 	}
@@ -258,7 +244,7 @@ func (db *WebhookDB) Add(wh Webhook) bool {
 	}
 	defer session.Close()
 
-	err = session.DB(db.DatabaseName).C(db.TrackCollectionName).Insert(wh)
+	err = session.DB(db.DatabaseName).C(db.CollectionName).Insert(wh)
 	if err != nil {
 		return false
 	}
@@ -277,8 +263,8 @@ func (db *WebhookDB) GetLastID() int {
 	defer session.Close()
 
 	var wh Webhook
-	// MongoDB sorts based on insertion time, so the last element can be found via the number of elements
-	err = session.DB(db.DatabaseName).C(db.TrackCollectionName).Find(bson.M{}).One(&wh)
+
+	err = session.DB(db.DatabaseName).C(db.CollectionName).Find(bson.M{}).One(&wh)
 	if err != nil {
 		fmt.Println("Couldn't retrieve the last ID from the database.")
 	}
@@ -297,7 +283,7 @@ func (db *WebhookDB) Get(ID int) Webhook {
 	defer session.Close()
 
 	var wh Webhook
-	err = session.DB(db.DatabaseName).C(db.TrackCollectionName).Find(bson.M{"id": ID}).One(&wh)
+	err = session.DB(db.DatabaseName).C(db.CollectionName).Find(bson.M{"id": ID}).One(&wh)
 	if err != nil {
 		fmt.Println("Couldn't find any Webhook with that ID")
 	}
@@ -306,7 +292,7 @@ func (db *WebhookDB) Get(ID int) Webhook {
 }
 
 /*
-Delete deletes a webhook with the given ID
+Delete deletes a webhook with the given ID and returns it
 */
 func (db *WebhookDB) Delete(ID int) Webhook {
 	session, err := mgo.Dial(db.DatabaseURL)
@@ -316,11 +302,11 @@ func (db *WebhookDB) Delete(ID int) Webhook {
 	defer session.Close()
 
 	var wh Webhook
-	err = session.DB(db.DatabaseName).C(db.TrackCollectionName).Find(bson.M{"id": ID}).One(&wh)
+	err = session.DB(db.DatabaseName).C(db.CollectionName).Find(bson.M{"id": ID}).One(&wh)
 	if err != nil {
 		fmt.Println("Couldn't find any Webhook with that ID")
 	} else {
-		err = session.DB(db.DatabaseName).C(db.TrackCollectionName).Remove(bson.M{"id": ID})
+		err = session.DB(db.DatabaseName).C(db.CollectionName).Remove(bson.M{"id": ID})
 	}
 
 	return wh
