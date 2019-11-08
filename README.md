@@ -29,7 +29,7 @@ Done by Håkon Schia (haakosc, 480631).
 **GET**: Returns the relevant field for the given ID. The valid fields are: H_date, pilot, glider, glider_id, track_length.
 
 # Heroku
-Deployed on Heroku under the URL: https://aqueous-springs-18630.herokuapp.com
+Deployed on Heroku under the URL: https://rocky-citadel-57079.herokuapp.com/
 
 # MongoDB
 The driver choice selected is motivated by me not knowing the difference and not having time to learn the difference because there is way too much other stuff to learn all by myself, so I just chose one of them.
